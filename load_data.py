@@ -1,10 +1,9 @@
-import sys
 import numpy
 
 def mcol(array):
     return numpy.reshape(array, (array.shape[0], 1))    # Reshape as column array
 
-def vcol(array):
+def mrow(array):
     return numpy.reshape(array, (1, array.shape[0]))    # Reshape as row array
 
 def load_file(input_file):
@@ -22,15 +21,17 @@ def load_file(input_file):
             categories.append(category)
         except:
             pass   
-    return numpy.hstack(data).astype(numpy.float32), vcol(numpy.array(categories, dtype=numpy.int32))
+    return numpy.hstack(data).astype(numpy.float32), numpy.array(categories, dtype=numpy.int32)
 
 def load_data():
     # Take the training and the test datasets files, passed as arguments to the script
-    training_data = sys.argv[1]
-    test_data = sys.argv[2]
+    training_data = './Train.txt'
+    test_data = './Test.txt'
     training_set = load_file(training_data)
     test_set = load_file(test_data)
     # Return the values of wine features and categories for both training and test set to the caller
-    return training_set[0], training_set[1], test_set[0], test_set[1] 
-
-load_data()
+    training_data = training_set[0]
+    training_labels = training_set[1]
+    test_data = test_set[0]
+    test_labels = test_set[1]
+    return training_data, training_labels, test_data, test_labels 
