@@ -12,7 +12,8 @@ def covariance(class_identifier, training_data, training_labels):
     m = mean(class_identifier, training_data, training_labels)
     centered_matrix = training_data[:, training_labels == class_identifier] - m
     N = centered_matrix.shape[1]
-    return numpy.dot(centered_matrix, centered_matrix.T)/N
+    cov = numpy.dot(centered_matrix, centered_matrix.T)/N
+    return cov*numpy.eye(cov.shape[0])
 
 def logpdf_GAU_ND(training_data, mean, covariance_matrix):
     M = training_data.shape[0];
@@ -33,8 +34,8 @@ def MVG():
     training_data = data[0]
     training_labels = data[1]
 
-    training_data = computePCA(training_data, 8)
-    training_data = computeLDA(training_data, training_labels, 5)
+    # training_data = computePCA(training_data, 10)
+    # training_data = computeLDA(training_data, training_labels, 7)
 
     K = 3
     K_fold_set = numpy.hsplit(training_data, K)

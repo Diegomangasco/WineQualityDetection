@@ -21,6 +21,7 @@ def load_file(input_file):
             categories.append(category)
         except:
             pass   
+    file.close()
     return numpy.hstack(data).astype(numpy.float32), numpy.array(categories, dtype=numpy.int32)
 
 def load_data():

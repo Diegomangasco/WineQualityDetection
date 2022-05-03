@@ -4,6 +4,9 @@ import numpy
 import scipy
 import scipy.special
 
+def class_columns(class_identifier, training_data, training_labels):
+    return training_data[:, training_labels == class_identifier].shape[1]
+
 def mean(class_identifier, training_data, training_labels):
     Dc = training_data[:, training_labels == class_identifier]
     return mcol(Dc.mean(1))
@@ -33,7 +36,7 @@ def MVG():
     training_data = data[0]
     training_labels = data[1]
 
-    training_data = computePCA(training_data, 8)
+    #training_data = computePCA(training_data, 9)
     training_data = computeLDA(training_data, training_labels, 5)
 
     K = 3
@@ -43,6 +46,7 @@ def MVG():
 
     accuracy_final_list = []
     error_final_list = []
+
     
     # For cycle for doing K fold cross validation 
     for i in range(0, K):
@@ -69,9 +73,14 @@ def MVG():
         covariance_matrix_0 = covariance(0, K_training_set, K_training_labels_set)
         covariance_matrix_1 = covariance(1, K_training_set, K_training_labels_set)
 
+        N_0 = class_columns(0, K_training_set, K_training_labels_set)
+        N_1 = class_columns(1, K_training_set, K_training_labels_set)
+        tied_covariance = (1/K_training_set.shape[1])*(covariance_matrix_0*N_0 + covariance_matrix_1*N_1)
+        tied_covariance = tied_covariance*numpy.eye(tied_covariance.shape[0])
+
         # Calculate the likelihood for the validation set
-        logS = logpdf_GAU_ND(K_validation_set, mean_0, covariance_matrix_0)
-        logS = numpy.concatenate((logS, logpdf_GAU_ND(K_validation_set, mean_1, covariance_matrix_1)), axis=0)
+        logS = logpdf_GAU_ND(K_validation_set, mean_0, tied_covariance)
+        logS = numpy.concatenate((logS, logpdf_GAU_ND(K_validation_set, mean_1, tied_covariance)), axis=0)
         logS = logS.T
         
         # We assume that the prior probability of each class is 1/2
