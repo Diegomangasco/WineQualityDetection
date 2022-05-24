@@ -28,6 +28,8 @@ class logRegClass:
             log_vector.append(numpy.logaddexp(0, -zi*S))
             counter += 1
         return constant + (1/counter)*numpy.sum(log_vector)
+    
+    
 
 def logistic_regression():
     data = load_data()
@@ -71,7 +73,7 @@ def logistic_regression():
         w_for_minimum = numpy.reshape(w_for_minimum, (1, w_for_minimum.shape[0]))
         S = numpy.dot(w_for_minimum, K_validation_set) + b_for_minimum
         # Predicted labels
-
+        print(S)
         Predicted_labels = []
         for i in range(0, S.shape[1]):
             if S[0][i] > 0:

@@ -34,7 +34,7 @@ def MVG():
     training_data = data[0]
     training_labels = data[1]
 
-    # training_data = computePCA(training_data, 10)
+    training_data = computePCA(training_data, 6)
     # training_data = computeLDA(training_data, training_labels, 7)
 
     K = 3

@@ -33,8 +33,8 @@ def MVG():
     training_data = data[0]
     training_labels = data[1]
 
-    training_data = computePCA(training_data, 8)
-    training_data = computeLDA(training_data, training_labels, 5)
+    training_data = computePCA(training_data, 9)
+    # training_data = computeLDA(training_data, training_labels, 5)
 
     K = 3
     K_fold_set = numpy.hsplit(training_data, K)
@@ -75,8 +75,8 @@ def MVG():
         logS = logS.T
         
         # We assume that the prior probability of each class is 1/2
-        Pc_0 = numpy.log(2/3)
-        Pc_1 = numpy.log(1/3)
+        Pc_0 = numpy.log(5/9)
+        Pc_1 = numpy.log(4/9)
         logSJoint_0 = logS[:, 0] + Pc_0
         logSJoint_1 = logS[:, 1] + Pc_1
         logSJoint = numpy.vstack((logSJoint_0, logSJoint_1)).T
