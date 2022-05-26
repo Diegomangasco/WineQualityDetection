@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed May 18 18:55:28 2022
-
-@author: genna
-"""
-
-
 from load_data import * 
 from dimensionality_reduction import *
 import numpy
@@ -33,7 +25,8 @@ def covariance(class_identifier, training_data, training_labels):
     m = mean(class_identifier, training_data, training_labels)
     centered_matrix = training_data[:, training_labels == class_identifier] - m
     N = centered_matrix.shape[1]
-    return numpy.dot(centered_matrix, centered_matrix.T)/N
+    cov = numpy.dot(centered_matrix, centered_matrix.T)/N
+    return cov*numpy.eye(cov.shape[0])
 
 def logpdf_GAU_ND(training_data, mean, covariance_matrix):
     M = training_data.shape[0];
@@ -54,13 +47,11 @@ if __name__=='__main__':
     training_data = data[0]
     training_labels = data[1]
 
-    training_data = computePCA(training_data, 9)
-    # training_data = computeLDA(training_data, training_labels, 5)
+    training_data = computePCA(training_data, 8)
     
-    (DTR, LTR), (DTE, LTE)= split_db_2to1(training_data, training_labels, seed=0)
+    (DTR, LTR), (DTE, LTE) = split_db_2to1(training_data, training_labels, seed=0)
     
-   
-
+    # Calculate parameters for our model
     mean_0 = mean(0, DTR, LTR)
     mean_1 = mean(1, DTR, LTR)
     covariance_matrix_0 = covariance(0, DTR, LTR)
@@ -68,9 +59,8 @@ if __name__=='__main__':
     
     logS = logpdf_GAU_ND(DTE, mean_0, covariance_matrix_0)
     logS = numpy.concatenate((logS, logpdf_GAU_ND(DTE, mean_1, covariance_matrix_1)), axis=0)
-    logS = logS.T
+    logS = logS.T   # Score matrix
     
-    # We assume that the prior probability of each class is 1/2
     Pc_0 = numpy.log(5/9)
     Pc_1 = numpy.log(4/9)
     logSJoint_0 = logS[:, 0] + Pc_0
@@ -88,43 +78,43 @@ if __name__=='__main__':
     predicted_labels = numpy.argmax(SPost, axis=1) 
     
     # compute the confusion matrix, accurancy and error rates
-    confusion= numpy.zeros([2,2], dtype= int)
+    confusion = numpy.zeros([2,2], dtype=int)
     for j in range(2):
         for i in range(2):
-            confusion[j,i]= ((predicted_labels==j) * (LTE==i)).sum()
+            confusion[j,i] = ((predicted_labels==j) * (LTE==i)).sum()
  
    
-    FNR= confusion[0,1]/(confusion[0,1]+ confusion[1,1])
-    FPR= confusion[1,0]/(confusion[1,0]+ confusion[0,0])
-    err= (confusion[0,1]+confusion[1,0])/(confusion[0,1]+ confusion[1,1]+confusion[1,0]+ confusion[0,0])
-    acc= 1-err
+    FNR = confusion[0,1]/(confusion[0,1]+ confusion[1,1])
+    FPR = confusion[1,0]/(confusion[1,0]+ confusion[0,0])
+    err = (confusion[0,1]+confusion[1,0])/(confusion[0,1]+ confusion[1,1]+confusion[1,0]+ confusion[0,0])
+    acc = 1-err
     
-    print(acc)    
+    print("Model accuracy: ", acc, "\n") 
+    print("Confusion matrix: ") 
     print(confusion)
     
-    
     # compute the log-lokelihood ratio llr
-    S= numpy.exp(logS)
-    llr= numpy.zeros([S.shape[0]])
-    for i in range(logS.shape[0]):
-        llr[i]= numpy.log(S[i,1]/S[i,0])
-    
+    S = numpy.exp(logS)
+    epsilon = 10**-8
+    llr = numpy.zeros([S.shape[0]])
+    for i in range(logS.shape[0]):    
+        llr[i] = numpy.log(S[i,1]/S[i,0])
+        
     # compute the calcusus for the ROC diagram
-    thresholds= numpy.array(llr)
+    thresholds = numpy.array(llr)
     thresholds.sort()
-    thresholds= numpy.concatenate([numpy.array([-numpy.inf]), thresholds, numpy.array([numpy.inf])])
-    FPR= numpy.zeros(thresholds.size)
-    TPR= numpy.zeros(thresholds.size)
+    thresholds = numpy.concatenate([numpy.array([-numpy.inf]), thresholds, numpy.array([numpy.inf])])
+    FPR = numpy.zeros(thresholds.size)
+    TPR = numpy.zeros(thresholds.size)
     
     for idx, t in enumerate(thresholds):
-        Pred= numpy.int32(llr> t)
-        Conf= numpy.zeros((2, 2))
+        Pred = numpy.int32(llr> t)
+        Conf = numpy.zeros((2, 2))
         for j in range(2):
             for i in range(2):
-                Conf[j, i]= ((Pred== j) * (LTE==i)).sum()
-        TPR[idx]= Conf[1,1] / (Conf[1,1]+Conf[0,1]) 
-        FPR[idx]= Conf[1,0] / (Conf[1,0]+Conf[0,0])
-       
+                Conf[j, i] = ((Pred==j) * (LTE==i)).sum()
+        TPR[idx] = Conf[1,1] / (Conf[1,1]+Conf[0,1]) 
+        FPR[idx] = Conf[1,0] / (Conf[1,0]+Conf[0,0])
     
     pylab.xlabel('FPR')
     pylab.ylabel('TPR')

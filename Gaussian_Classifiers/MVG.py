@@ -28,40 +28,34 @@ def logpdf_GAU_ND(training_data, mean, covariance_matrix):
      
     return mrow(numpy.array(l_x));
 
-def MVG():
+if __name__=='__main__':
     data = load_data()
     training_data = data[0]
     training_labels = data[1]
 
     training_data = computePCA(training_data, 9)
-    # training_data = computeLDA(training_data, training_labels, 5)
 
-    K = 3
-    K_fold_set = numpy.hsplit(training_data, K)
-    K_fold_set = numpy.array(K_fold_set)
-    K_fold_labels = numpy.split(training_labels, K)
+    K = 10
 
     accuracy_final_list = []
-    error_final_list = []
     
+    length_of_interval = int(training_data.shape[1]/K)
+    index = 0
     # For cycle for doing K fold cross validation 
-    for i in range(0, K):
+    while index <= (training_data.shape[1] - length_of_interval):
         # Take one section as validation set
-        K_validation_set = K_fold_set[i]
-        K_validation_label_set = K_fold_labels[i]
-        # Make a selector and a for cycle for taking the other sections of the training set
-        selector = [x for x in range(0, K) if x!=i]
-        K_selected_set = K_fold_set[selector]
-        K_selected_labels_set = []
-        for j in range(0, K):
-            if j != i:
-                K_selected_labels_set.append(K_fold_labels[j])
-        K_training_set = K_selected_set[0]
-        K_training_labels_set = K_selected_labels_set[0]
-        # Concatenate the arrays for having one training set both for data and labels
-        for j in range(1, K-1):
-            K_training_set = numpy.concatenate((K_training_set, K_selected_set[j]), axis=1)
-            K_training_labels_set = numpy.concatenate((K_training_labels_set, K_selected_labels_set[j]), axis=0)
+        start = index
+        end = index + length_of_interval
+        K_validation_set = training_data[:, start:end]
+        K_validation_label_set = training_labels[start:end]
+        K_training_set_part1 = training_data[:, 0:start]
+        K_training_set_part2 = training_data[:, end:]
+        K_training_set = numpy.concatenate((K_training_set_part1, K_training_set_part2), axis=1)
+        K_training_labels_set_part1 = training_labels[0:start]
+        K_training_labels_set_part2 = training_labels[end:]
+        K_training_labels_set = numpy.concatenate((K_training_labels_set_part1, K_training_labels_set_part2), axis=None)
+
+        index = index + length_of_interval
         
         # Train the model
         mean_0 = mean(0, K_training_set, K_training_labels_set)
@@ -99,13 +93,9 @@ def MVG():
             else:
                 accuracy_array.append(0)
         accuracy = numpy.array(accuracy_array).sum(0)/len(accuracy_array)
-        error_rate = 1 - accuracy
         accuracy_final_list.append(accuracy)
-        error_final_list.append(error_rate)
 
     accuracy_mean = (sum(accuracy_final_list)/K)*100
-    error_mean = (sum(error_final_list)/K)*100
-    print(accuracy_mean)
-    print(error_mean)
-
-MVG()
+    error_mean = 100 - accuracy_mean
+    print("Model accuracy:", accuracy_mean)
+    print("Model error:", error_mean)
