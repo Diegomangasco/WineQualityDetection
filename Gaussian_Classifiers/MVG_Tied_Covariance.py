@@ -40,15 +40,21 @@ if __name__=='__main__':
 
     K = 10
 
-    accuracy_final_list = []
-
+    predicted_labels = []
+    real_labels = []
     length_of_interval = int(training_data.shape[1]/K)
+
     index = 0
+    counter = 0
     # For cycle for doing K fold cross validation 
     while index <= (training_data.shape[1] - length_of_interval):
         # Take one section as validation set
         start = index
-        end = index + length_of_interval
+        if counter < K-1:
+            end = index + length_of_interval
+        else:
+            end = index + length_of_interval + (training_data.shape[1]-K*length_of_interval)
+        counter += 1
         K_validation_set = training_data[:, start:end]
         K_validation_label_set = training_labels[start:end]
         K_training_set_part1 = training_data[:, 0:start]
@@ -90,21 +96,17 @@ if __name__=='__main__':
         SPost = numpy.exp(logSPost)
         # The function ArgMax returns the indices of the maximum values along the indicated axis
         # In our case we have two columns, one for each class and we want to find the Maximum Likelihood for each sample (each row of the matrix)
-        Predicted_labels = numpy.argmax(SPost, axis=1) 
+        Predicted = numpy.argmax(SPost, axis=1) 
+        predicted_labels = numpy.concatenate((predicted_labels, Predicted), axis=0)
+        real_labels = numpy.concatenate((real_labels, K_validation_label_set), axis=0)
 
-        # Accuracy and Error rate
-        accuracy_array = []
-        for i in range(0, K_validation_label_set.size):
-            if Predicted_labels[i] == K_validation_label_set[i]:
-                accuracy_array.append(1)
-            else:
-                accuracy_array.append(0)
-        accuracy = numpy.array(accuracy_array).sum(0)/len(accuracy_array)
-        accuracy_final_list.append(accuracy)
-
-    accuracy_mean = (sum(accuracy_final_list)/K)*100
-    error_mean = 100 - accuracy_mean
-    print("Model accuracy:", accuracy_mean)
-    print("Model error:", error_mean)
+    accuracy = 0
+    for i in range(0, training_data.shape[1]):
+        if real_labels[i] == predicted_labels[i]:
+            accuracy += 1
+    accuracy = (accuracy/training_data.shape[1])*100
+    error_rate = 100 - accuracy
+    print("Model accuracy:", accuracy)
+    print("Model error:", error_rate)
 
     

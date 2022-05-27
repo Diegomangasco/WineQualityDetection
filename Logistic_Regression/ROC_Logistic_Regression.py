@@ -79,9 +79,7 @@ if __name__=='__main__':
         FNR = false_negative/(false_negative + true_positive)
         FPR = false_positive/(false_positive + true_negative)
         
-        cxe_one = numpy.logaddexp(0, -STE[ZTE>0]*ZTE[ZTE>0])
-        cxe_minus_one = numpy.logaddexp(0, -STE[ZTE<0]*ZTE[ZTE<0])
-        llr = numpy.concatenate(((4/9)*cxe_one, (5/9)*cxe_minus_one), axis=0)
+        llr = STE - numpy.log((4/9)/(1-4/9))
         thresholds = llr
         thresholds.sort()
 
