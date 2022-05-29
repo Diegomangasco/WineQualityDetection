@@ -33,22 +33,22 @@ def logpdf_GAU_ND(training_data, mean, covariance_matrix):
 
 def conf_matrix(llratio, labs, pr, C_fn, C_fp):
     
-    # computing c* comparing the llr with a threshold t
-    t= - numpy.log((pr*C_fn)/((1-pr)*C_fp))
+    # Computing c* comparing the llr with a threshold t
+    t = - numpy.log((pr*C_fn)/((1-pr)*C_fp))
     
-    C_aster=numpy.zeros([llratio.shape[0],], dtype= int)
+    C_star=numpy.zeros([llratio.shape[0],], dtype= int)
     
     for i in range(llratio.shape[0]):
         if llratio[i]>t:
-            C_aster[i]= 1
+            C_star[i] = 1
         else:
-            C_aster[i]= 0
+            C_star[i] = 0
             
-    # computing the confusion matrix, comparing labels and c*    
+    # Computing the confusion matrix, comparing labels and c*    
     conf_matr= numpy.zeros([2,2], dtype= int)
     for j in range(2):
         for i in range(2):
-            conf_matr[j,i]= ((C_aster==j) * (labs==i)).sum()
+            conf_matr[j,i]= ((C_star==j) * (labs==i)).sum()
     return conf_matr
 
 if __name__=='__main__':
@@ -57,7 +57,6 @@ if __name__=='__main__':
     training_data = data[0]
     training_labels = data[1]
     
-
     training_data = computePCA(training_data, 9)
 
     K = 5
@@ -119,29 +118,28 @@ if __name__=='__main__':
     # In our case we have two columns, one for each class and we want to find the Maximum Likelihood for each sample (each row of the matrix)
     Predicted_labels = numpy.argmax(SPost, axis=1) 
 
-    # compute the confusion matrix, accurancy and error rates
+    # Compute the confusion matrix, accurancy and error rates
     confusion = numpy.zeros([2,2], dtype=int)
     for j in range(2):
         for i in range(2):
             confusion[j,i] = ((Predicted_labels==j) * (real_labels==i)).sum()
  
-   
     FNR_ = confusion[0,1]/(confusion[0,1]+ confusion[1,1])
     FPR_ = confusion[1,0]/(confusion[1,0]+ confusion[0,0])
-    err = (confusion[0,1]+confusion[1,0])/(confusion[0,1]+ confusion[1,1]+confusion[1,0]+ confusion[0,0])
+    err = (confusion[0,1]+confusion[1,0])/(confusion[0,1]+confusion[1,1]+confusion[1,0]+confusion[0,0])
     acc = 1-err
     print("Model accuracy:", round(acc*100, 3), "%")
     print("Model error:", round(err*100, 3), "%")
     print("Confusion matrix: ") 
     print(confusion)
 
-    # compute the log-lokelihood ratio llr
+    # Compute the log-lokelihood ratio llr by using the score matrix
     S = numpy.exp(log_scores)
     llr = numpy.zeros([S.shape[0]])
     for i in range(log_scores.shape[0]):    
         llr[i] = numpy.log(S[i,1]/S[i,0])
         
-    # compute the calcusus for the ROC diagram
+    # Compute the calcusus for the ROC diagram
     thresholds = numpy.array(llr)
     thresholds.sort()
     thresholds = numpy.concatenate([numpy.array([-numpy.inf]), thresholds, numpy.array([numpy.inf])])
@@ -153,6 +151,7 @@ if __name__=='__main__':
         Conf = numpy.zeros((2, 2))
         for j in range(2):
             for i in range(2):
+                # Confusion matrix for each threshold
                 Conf[j, i] = ((Pred==j) * (real_labels==i)).sum()
         TPR[idx] = Conf[1,1] / (Conf[1,1]+Conf[0,1]) 
         FPR[idx] = Conf[1,0] / (Conf[1,0]+Conf[0,0])
@@ -163,37 +162,40 @@ if __name__=='__main__':
     pylab.plot(FPR, TPR)
     pylab.show()
 
-    #compute the normalized DCF of our model
-    Cost_matrix= numpy.zeros([2,2], dtype= int)
-    Cfn= 1
-    Cfp= 1
-    Cost_matrix[0,1]= Cfn
-    Cost_matrix[1,0]= Cfp
+    # Compute the normalized DCF of our model with a threshold that is our prior for computing the rates
+    Cost_matrix = numpy.zeros([2,2], dtype= int)
+    Cfn = 1
+    Cfp = 1
+    Cost_matrix[0,1] = Cfn
+    Cost_matrix[1,0] = Cfp
+    # Compute the confusion matrix with the llr calculated previously and with real_labels from the k fold 
     confusion__matrix = conf_matrix(llr, real_labels, prior, Cfn, Cfp)
-    FNR=  confusion__matrix[0,1] / ( confusion__matrix[0,1] +  confusion__matrix[1,1])
-    FPR=  confusion__matrix[1,0] / ( confusion__matrix[1,0] +  confusion__matrix[0,0])
-    Bemp= prior*Cfn*FNR + (1-prior)*Cfp*FPR
-    Bdummy= min(prior*Cfn, (1-prior)*Cfp) 
-    normDCF= Bemp/Bdummy
-    print(normDCF)
+    FNR_DCF = confusion__matrix[0,1] / ( confusion__matrix[0,1] + confusion__matrix[1,1])
+    FPR_DCF = confusion__matrix[1,0] / ( confusion__matrix[1,0] + confusion__matrix[0,0])
+    # Bayes empirical risk
+    Bemp = prior*Cfn*FNR_DCF + (1-prior)*Cfp*FPR_DCF
+    # Bayes empirical risk with a dummy strategy
+    Bdummy = min(prior*Cfn, (1-prior)*Cfp) 
+    # Normalized DCF
+    normDCF = Bemp/Bdummy
+    print("Model normalized DCF with prior", round(prior, 3), ":", round(normDCF, 3))
     
  
-    #compute the minimum normalized DCF for our model
-    Bempirical= numpy.zeros(thresholds.size)
+    # Compute the minimum normalized DCF for our model
+    Bempirical = numpy.zeros(thresholds.size)
     for idx, t in enumerate(thresholds):
-        Pred= numpy.int32(llr > t)
-        Conf= numpy.zeros((2, 2))
+        Pred = numpy.int32(llr > t)
+        Conf = numpy.zeros((2, 2))
         for j in range(2):
             for i in range(2):
-                Conf[j, i]= ((Pred== j) * (real_labels==i)).sum()
-        FNR__= Conf[0,1] / (Conf[0,1] + Conf[1,1])
-        FPR__= Conf[1,0] / (Conf[1,0] + Conf[0,0])
-        Bempirical[idx]= prior*Cfn*FNR__ + (1-prior)*Cfp*FPR__
+                Conf[j, i] = ((Pred==j) * (real_labels==i)).sum()
+        FNR_minDCF = Conf[0,1] / (Conf[0,1] + Conf[1,1])
+        FPR_minDCF = Conf[1,0] / (Conf[1,0] + Conf[0,0])
+        Bempirical[idx]= prior*Cfn*FNR_minDCF + (1-prior)*Cfp*FPR_minDCF
    
     Bemp_min= Bempirical.min()   
     min_normDCF= Bemp_min/Bdummy
-    print(min_normDCF)
-    
+    print("Model minimum DCF:", round(min_normDCF, 3))
     
     
     # Compute the Bayes error plot for our recognizer. Consider values of p˜ ranging, for example, from -3
@@ -201,34 +203,33 @@ if __name__=='__main__':
     # we consider). For each value p˜, compute the corresponding effective prior
     
     effPriorLogOdds = numpy.linspace(-3, 3, 21) 
-    normalizedDCF= numpy.zeros(21)
-    minDCF= numpy.zeros(21)
+    normalizedDCF = numpy.zeros(21)
+    minDCF = numpy.zeros(21)
     
     for  index in range(21):
         eff_prior= 1/ (1 + numpy.exp( - effPriorLogOdds[index]))
-        #compute the actual DCF
-        Bdummy= min(eff_prior*Cfn, (1-eff_prior)*Cfp)
-        c_m= conf_matrix(llr, real_labels, eff_prior, Cfn, Cfp)
-        FNR__=  c_m[0,1] / ( c_m[0,1] +  c_m[1,1])
-        FPR__=  c_m[1,0] / (  c_m[1,0] +  c_m[0,0])
-        B_emp= eff_prior*Cfn*FNR__ + (1-eff_prior)*Cfp*FPR__
-        normBemp= B_emp/Bdummy
+        # Compute the actual DCF
+        Bdummy = min(eff_prior*Cfn, (1-eff_prior)*Cfp)
+        c_m = conf_matrix(llr, real_labels, eff_prior, Cfn, Cfp)
+        FNR_actualDCF =  c_m[0,1] / (c_m[0,1] + c_m[1,1])
+        FPR_actualDCF =  c_m[1,0] / (c_m[1,0] + c_m[0,0])
+        Bemp_actualDCF = eff_prior*Cfn*FNR_actualDCF + (1-eff_prior)*Cfp*FPR_actualDCF
+        normBemp= Bemp_actualDCF/Bdummy
         normalizedDCF[index]= normBemp
         
-        #compute the min DCF
-        Bemp_= numpy.zeros(thresholds.size)
+        # Compute the min DCF
+        Bemp_minDCF= numpy.zeros(thresholds.size)
         for idx, t in enumerate(thresholds):
-            Pred= numpy.int32(llr > t)
-            Conf= numpy.zeros((2, 2))
+            Pred = numpy.int32(llr > t)
+            Conf = numpy.zeros((2, 2))
             for j in range(2):
                 for i in range(2):
-                    Conf[j, i]= ((Pred== j) * (real_labels==i)).sum()
-            FNR__= Conf[0,1] / (Conf[0,1] + Conf[1,1])
-            FPR__= Conf[1,0] / (Conf[1,0] + Conf[0,0])
-            Bemp_[idx]= eff_prior*Cfn*FNR__ + (1-eff_prior)*Cfp*FPR__
+                    Conf[j, i]= ((Pred==j) * (real_labels==i)).sum()
+            FNR_minDCF = Conf[0,1] / (Conf[0,1] + Conf[1,1])
+            FPR_minDCF = Conf[1,0] / (Conf[1,0] + Conf[0,0])
+            Bemp_minDCF[idx]= eff_prior*Cfn*FNR_minDCF + (1-eff_prior)*Cfp*FPR_minDCF
              
-       
-        Bemp_min= Bemp_.min()   
+        Bemp_min= Bemp_minDCF.min()   
         
         minDCF[index]= Bemp_min/Bdummy
         
@@ -242,3 +243,4 @@ if __name__=='__main__':
     matplotlib.pyplot.xlim([-3, 3])
     matplotlib.pyplot.legend()
     matplotlib.pyplot.show()
+
