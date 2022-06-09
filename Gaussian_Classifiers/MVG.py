@@ -6,6 +6,12 @@ import scipy.special
 import pylab
 import matplotlib
 
+def mcol(array):
+    return numpy.reshape(array, (array.shape[0], 1))    # Reshape as column array
+
+def mrow(array):
+    return numpy.reshape(array, (1, array.shape[0]))    # Reshape as row array
+
 def mean(class_identifier, training_data, training_labels):
     Dc = training_data[:, training_labels == class_identifier]
     return mcol(Dc.mean(1))
@@ -55,7 +61,14 @@ if __name__=='__main__':
     prior= 4/9
     data = load_data()
     training_data = data[0]
-    training_labels = data[1]
+    # training_data1 = training_data[1:3, :]
+    # training_data2 = training_data[4:8, :]
+    # training_data3 = mrow(training_data[10, :])
+    # training_data = numpy.concatenate((training_data1, training_data2), axis=0)
+    # training_data = numpy.concatenate((training_data, training_data3), axis=0)
+    # training_labels = data[1]
+
+    # training_data = data[0]
     
     training_data = computePCA(training_data, 9)
 
