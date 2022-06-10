@@ -58,9 +58,11 @@ def conf_matrix(llratio, labs, pr, C_fn, C_fp):
     return conf_matr
 
 if __name__=='__main__':
-    prior= 4/9
+    prior_array= [4/9, 1/5, 4/5]
+    prior = prior_array[0]
     data = load_data()
     training_data = data[0]
+    training_labels = data[1]
     
     training_data = computePCA(training_data, 9)
 
@@ -106,7 +108,6 @@ if __name__=='__main__':
         real_labels = numpy.concatenate((real_labels, K_validation_label_set), axis=0)
 
     log_scores = log_scores[1:, :]
-    # We assume that the prior probability of each class is 1/2
     Pc_0 = numpy.log(1-prior)
     Pc_1 = numpy.log(prior)
     logSJoint_0 = log_scores[:, 0] + Pc_0
@@ -183,7 +184,7 @@ if __name__=='__main__':
     Bdummy = min(prior*Cfn, (1-prior)*Cfp) 
     # Normalized DCF
     normDCF = Bemp/Bdummy
-    print("Model normalized DCF with prior", round(prior, 3), ":", round(normDCF, 3))
+    print("Actual normalized DCF", round(normDCF, 3))
     
  
     # Compute the minimum normalized DCF for our model
@@ -200,7 +201,7 @@ if __name__=='__main__':
    
     Bemp_min= Bempirical.min()   
     min_normDCF= Bemp_min/Bdummy
-    print("Model minimum DCF:", round(min_normDCF, 3))
+    print("Minimum normalized DCF:", round(min_normDCF, 3))
     
     
     # Compute the Bayes error plot for our recognizer. Consider values of p˜ ranging, for example, from -3

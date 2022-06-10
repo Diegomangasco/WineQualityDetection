@@ -15,7 +15,7 @@ def vcol(v):
 def vrow(v):
     return v.reshape((1, v.size))
 
-def logreg_obj_wrap(DTR, LTR, l, pi):
+def logreg_obj_wrap(DTR, LTR, l, prior_tr):
     M = DTR.shape[0]
     Z = 2.0*LTR - 1.0
     def logreg_obj(v):
@@ -28,7 +28,7 @@ def logreg_obj_wrap(DTR, LTR, l, pi):
         # For the prior weighted version of the model
         cxe_one = numpy.logaddexp(0, -S[:, Z>0]*Z[Z>0])
         cxe_minus_one = numpy.logaddexp(0, -S[:, Z<0]*Z[Z<0])
-        return 0.5*l*numpy.linalg.norm(w)**2 + prior*cxe_one.mean() + (1-prior)*cxe_minus_one.mean()
+        return 0.5*l*numpy.linalg.norm(w)**2 + prior_tr*cxe_one.mean() + (1-prior_tr)*cxe_minus_one.mean()
     return logreg_obj
     
 def conf_matrix(llratio, labs, pr, C_fn, C_fp):
@@ -52,14 +52,16 @@ def conf_matrix(llratio, labs, pr, C_fn, C_fp):
     return conf_matr
 
 if __name__=='__main__':
-    prior = 4/9
+    prior_array = [4/9, 1/5, 4/5]
+    prior_t = prior_array[0]   # prior for training the model
+    prior_tilde = prior_array[1]   # prior for evaluate the model
     data = load_data()
     training_data = data[0]
     training_labels = data[1]
 
-    training_data = computePCA(training_data, 9)
+    training_data = computePCA(training_data, 8)
     
-    lamb = 0.0001;
+    lamb = 1e-5;
     K = 5
 
     scores_list = numpy.zeros([1,1])
@@ -90,7 +92,7 @@ if __name__=='__main__':
 
         # Use the scipy function to compute LBFGS method for minimization
         x0 = numpy.zeros(K_training_set.shape[0] + 1)
-        logreg_obj = logreg_obj_wrap(K_training_set, K_training_labels_set, lamb, prior)
+        logreg_obj = logreg_obj_wrap(K_training_set, K_training_labels_set, lamb, prior_t)
         minimum_position, function_value, dictionary = scipy.optimize.fmin_l_bfgs_b(logreg_obj, x0, approx_grad=True)
         w_for_minimum = minimum_position[0:-1]
         b_for_minimum = minimum_position[-1]
@@ -126,7 +128,7 @@ if __name__=='__main__':
 
     # Compute the log-lokelihood ratio llr by using the score matrix
     Scores = numpy.exp(scores_list[0, :])
-    llr = Scores - prior/(1-prior)
+    llr = Scores - prior_t/(1-prior_t)
         
     # Compute the calcusus for the ROC diagram
     thresholds = numpy.array(llr)
@@ -158,16 +160,16 @@ if __name__=='__main__':
     Cost_matrix[0,1] = Cfn
     Cost_matrix[1,0] = Cfp
     # Compute the confusion matrix with the llr calculated previously and with real_labels from the k fold 
-    confusion__matrix = conf_matrix(llr, real_labels, prior, Cfn, Cfp)
+    confusion__matrix = conf_matrix(llr, real_labels, prior_tilde, Cfn, Cfp)
     FNR_DCF = confusion__matrix[0,1] / ( confusion__matrix[0,1] + confusion__matrix[1,1])
     FPR_DCF = confusion__matrix[1,0] / ( confusion__matrix[1,0] + confusion__matrix[0,0])
     # Bayes empirical risk
-    Bemp = prior*Cfn*FNR_DCF + (1-prior)*Cfp*FPR_DCF
+    Bemp = prior_tilde*Cfn*FNR_DCF + (1-prior_tilde)*Cfp*FPR_DCF
     # Bayes empirical risk with a dummy strategy
-    Bdummy = min(prior*Cfn, (1-prior)*Cfp) 
+    Bdummy = min(prior_tilde*Cfn, (1-prior_tilde)*Cfp) 
     # Normalized DCF
     normDCF = Bemp/Bdummy
-    print("Model normalized DCF with prior", round(prior, 3), ":", round(normDCF, 3))
+    print("Actual nnormalized DCF", round(normDCF, 3))
     
  
     # Compute the minimum normalized DCF for our model
@@ -180,11 +182,11 @@ if __name__=='__main__':
                 Conf[j, i] = ((Pred==j) * (real_labels==i)).sum()
         FNR_minDCF = Conf[0,1] / (Conf[0,1] + Conf[1,1])
         FPR_minDCF = Conf[1,0] / (Conf[1,0] + Conf[0,0])
-        Bempirical[idx]= prior*Cfn*FNR_minDCF + (1-prior)*Cfp*FPR_minDCF
+        Bempirical[idx]= prior_tilde*Cfn*FNR_minDCF + (1-prior_tilde)*Cfp*FPR_minDCF
    
     Bemp_min= Bempirical.min()   
     min_normDCF= Bemp_min/Bdummy
-    print("Model minimum DCF:", round(min_normDCF, 3))
+    print("Minimum normalized DCF:", round(min_normDCF, 3))
     
     
     # Compute the Bayes error plot for our recognizer. Consider values of p˜ ranging, for example, from -3
