@@ -56,13 +56,6 @@ if __name__=='__main__':
     data = load_data()
     training_data = data[0]
     training_labels = data[1]
-    # training_data1 = training_data[1:3, :]
-    # training_data2 = training_data[4:8, :]
-    # training_data3 = mrow(training_data[10, :])
-    # training_data = numpy.concatenate((training_data1, training_data2), axis=0)
-    # training_data = numpy.concatenate((training_data, training_data3), axis=0)
-    
-    # training_data = data[0]
 
     training_data = computePCA(training_data, 9)
     
