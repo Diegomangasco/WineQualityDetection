@@ -31,15 +31,15 @@ def logreg_obj_wrap(DTR, LTR, l, prior_tr):
         return 0.5*l*numpy.linalg.norm(w)**2 + prior_tr*cxe_one.mean() + (1-prior_tr)*cxe_minus_one.mean()
     return logreg_obj
     
-def conf_matrix(llratio, labs, pr, C_fn, C_fp):
+def conf_matrix(scores, labs, pr, C_fn, C_fp):
     
     # Computing c* comparing the llr with a threshold t
-    t = - numpy.log((pr*C_fn)/((1-pr)*C_fp))
+    t = - (pr*C_fn)/((1-pr)*C_fp)
     
-    C_star=numpy.zeros([llratio.shape[0],], dtype= int)
+    C_star=numpy.zeros([scores.shape[0],], dtype= int)
     
-    for i in range(llratio.shape[0]):
-        if llratio[i]>t:
+    for i in range(scores.shape[0]):
+        if scores[i]>t:
             C_star[i] = 1
         else:
             C_star[i] = 0
@@ -54,14 +54,14 @@ def conf_matrix(llratio, labs, pr, C_fn, C_fp):
 if __name__=='__main__':
     prior_array = [4/9, 1/5, 4/5]
     prior_t = prior_array[0]   # prior for training the model
-    prior_tilde = prior_array[1]   # prior for evaluate the model
+    prior_tilde = prior_array[0]   # prior for evaluate the model
     data = load_data()
     training_data = data[0]
     training_labels = data[1]
 
     training_data = computePCA(training_data, 8)
     
-    lamb = 1e-5;
+    lamb = 1e-3;
     K = 5
 
     scores_list = numpy.zeros([1,1])
@@ -126,19 +126,17 @@ if __name__=='__main__':
     print("Confusion matrix: ") 
     print(confusion)
 
-    # Compute the log-lokelihood ratio llr by using the score matrix
-    Scores = numpy.exp(scores_list[0, :])
-    llr = Scores - prior_t/(1-prior_t)
+    Scores = numpy.array(scores_list[0, :])
         
     # Compute the calcusus for the ROC diagram
-    thresholds = numpy.array(llr)
-    thresholds.sort()
-    thresholds = numpy.concatenate([numpy.array([-numpy.inf]), thresholds, numpy.array([numpy.inf])])
-    FPR = numpy.zeros(thresholds.size)
-    TPR = numpy.zeros(thresholds.size)
+    thresholds_ROC = numpy.array(Scores)
+    thresholds_ROC.sort()
+    thresholds_ROC = numpy.concatenate([numpy.array([-numpy.inf]), thresholds_ROC, numpy.array([numpy.inf])])
+    FPR = numpy.zeros(thresholds_ROC.size)
+    TPR = numpy.zeros(thresholds_ROC.size)
     
-    for idx, t in enumerate(thresholds):
-        Pred = numpy.int32(llr > t)
+    for idx, t in enumerate(thresholds_ROC):
+        Pred = numpy.int32(Scores > t)
         Conf = numpy.zeros((2, 2))
         for j in range(2):
             for i in range(2):
@@ -160,7 +158,7 @@ if __name__=='__main__':
     Cost_matrix[0,1] = Cfn
     Cost_matrix[1,0] = Cfp
     # Compute the confusion matrix with the llr calculated previously and with real_labels from the k fold 
-    confusion__matrix = conf_matrix(llr, real_labels, prior_tilde, Cfn, Cfp)
+    confusion__matrix = conf_matrix(Scores, real_labels, prior_tilde, Cfn, Cfp)
     FNR_DCF = confusion__matrix[0,1] / ( confusion__matrix[0,1] + confusion__matrix[1,1])
     FPR_DCF = confusion__matrix[1,0] / ( confusion__matrix[1,0] + confusion__matrix[0,0])
     # Bayes empirical risk
@@ -173,9 +171,10 @@ if __name__=='__main__':
     
  
     # Compute the minimum normalized DCF for our model
+    thresholds = numpy.array(Scores)
     Bempirical = numpy.zeros(thresholds.size)
     for idx, t in enumerate(thresholds):
-        Pred = numpy.int32(llr > t)
+        Pred = numpy.int32(Scores > t)
         Conf = numpy.zeros((2, 2))
         for j in range(2):
             for i in range(2):
@@ -201,7 +200,7 @@ if __name__=='__main__':
         eff_prior= 1/ (1 + numpy.exp( - effPriorLogOdds[index]))
         # Compute the actual DCF
         Bdummy = min(eff_prior*Cfn, (1-eff_prior)*Cfp)
-        c_m = conf_matrix(llr, real_labels, eff_prior, Cfn, Cfp)
+        c_m = conf_matrix(Scores, real_labels, eff_prior, Cfn, Cfp)
         FNR_actualDCF =  c_m[0,1] / (c_m[0,1] + c_m[1,1])
         FPR_actualDCF =  c_m[1,0] / (c_m[1,0] + c_m[0,0])
         Bemp_actualDCF = eff_prior*Cfn*FNR_actualDCF + (1-eff_prior)*Cfp*FPR_actualDCF
@@ -211,7 +210,7 @@ if __name__=='__main__':
         # Compute the min DCF
         Bemp_minDCF= numpy.zeros(thresholds.size)
         for idx, t in enumerate(thresholds):
-            Pred = numpy.int32(llr > t)
+            Pred = numpy.int32(thresholds > t)
             Conf = numpy.zeros((2, 2))
             for j in range(2):
                 for i in range(2):
