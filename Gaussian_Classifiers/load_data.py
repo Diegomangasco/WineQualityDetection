@@ -37,7 +37,7 @@ def load_data():
     test_labels = test_set[1]
     return training_data, training_labels, test_data, test_labels 
   
-        
+     
         
     
     

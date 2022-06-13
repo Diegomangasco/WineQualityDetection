@@ -14,7 +14,7 @@ def mcol(array):
 def conf_matrix(scores, labs, pr, C_fn, C_fp):
     
     # Computing c* comparing the llr with a threshold t
-    t = - (pr*C_fn)/((1-pr)*C_fp)
+    t = - numpy.log(pr*C_fn)/((1-pr)*C_fp)
     
     C_star=numpy.zeros([scores.shape[0],], dtype= int)
     
@@ -40,22 +40,23 @@ def SVM_linear(DTR, LTR, C, k):
     Z[LTR == 0] = -1
 
     H = numpy.dot(D_hat.T, D_hat) 
-    H = mcol(Z) * mrow(Z) * H   # Hij = Zi*Zj*Xi.T*Xj
+    H = mcol(Z) * mrow(Z) * H   # Hij = Zi Zj Xi.T Xj
 
     def JDual(alpha):   # alpha=values of Lagrange multipliers
         Ha = numpy.dot(H, mcol(alpha))
         aHa = numpy.dot(mrow(alpha), Ha)
         a1 = alpha.sum()
-        return -0.5 * aHa.ravel() + a1, -Ha.ravel() + numpy.ones(alpha.size) # grad=-H*alpha+1
+        return -0.5 * aHa.ravel() + a1, -Ha.ravel() + numpy.ones(alpha.size) # grad= - H alpha + 1
 
     def LDual(alpha):   # function that we actually minimize -> -loss and -grad
         loss, grad = JDual(alpha)
         return -loss, -grad
     
-    def JPrimal(w):
-        S = numpy.dot(mrow(w), D_hat)
-        loss = numpy.maximum(numpy.zeros(S.shape), 1-Z*S).sum()
-        return 0.5 * numpy.linalg.norm(w)**2 + C * loss
+    # only to verify if the dual is computed well (computing the duality gap)
+    # def JPrimal(w):
+    #     S = numpy.dot(mrow(w), D_hat)
+    #     loss = numpy.maximum(numpy.zeros(S.shape), 1-Z*S).sum()
+    #     return 0.5 * numpy.linalg.norm(w)**2 + C * loss
 
     alphaStar, _x, _y = scipy.optimize.fmin_l_bfgs_b(
         LDual,
@@ -66,23 +67,27 @@ def SVM_linear(DTR, LTR, C, k):
         maxfun=100000,
     )
 
-    wStar = numpy.dot(D_hat, mcol(alphaStar)*mcol(Z)) # dual solution w=sum(alpha_i*Z_i*X_i)
-
+    wStar = numpy.dot(D_hat, mcol(alphaStar)*mcol(Z)) # primal solution: w=sum(alpha_i Z_i X_i)
+    
     return wStar
 
 if __name__ == '__main__':
     prior_array= [4/9, 1/5, 4/9] 
-    prior_t = prior_array[0]   # prior for training the model
+    # prior_t = prior_array[0]   # prior for training the model
     prior_tilde = prior_array[0]   # prior for evaluate the model
     data = load_data()
     training_data = data[0]
     training_labels = data[1]
     
-    training_data = computePCA(training_data, 9)
-
+    training_data = computePCA(training_data, 7)
+    
+    # K fold cross validation 
     K = 5
+    
+    # parameters for SVM
     C = 1
     k_SVM = 1
+    
     real_labels = []
     scores_list = numpy.zeros([1, 1])
     
@@ -109,9 +114,9 @@ if __name__ == '__main__':
 
         index = index + length_of_interval
 
-        wStar = SVM_linear(K_training_set, K_training_labels_set, C, k_SVM)
+        w_star = SVM_linear(K_training_set, K_training_labels_set, C, k_SVM)
         K_validation_set_hat = numpy.vstack([K_validation_set, numpy.ones((1, K_validation_set.shape[1]))*k_SVM])
-        S = numpy.dot(wStar.T, K_validation_set_hat)
+        S = numpy.dot(w_star.T, K_validation_set_hat)
         scores_list = numpy.concatenate((scores_list, S), axis=1)
         real_labels = numpy.concatenate((real_labels, K_validation_label_set), axis=0)
 
@@ -137,8 +142,8 @@ if __name__ == '__main__':
     print("Model error:", round(err*100, 3), "%")
     print("Confusion matrix: ") 
     print(confusion)
-
-    Scores = numpy.array(scores_list[0, :])
+    
+    Scores = numpy.array(scores_list[0, :]) 
 
     # Compute the calcusus for the ROC diagram
     thresholds_ROC = numpy.array(Scores)
@@ -179,7 +184,7 @@ if __name__ == '__main__':
     Bdummy = min(prior_tilde*Cfn, (1-prior_tilde)*Cfp) 
     # Normalized DCF
     normDCF = Bemp/Bdummy
-    print("Actual nnormalized DCF", round(normDCF, 3))
+    print("Actual normalized DCF", round(normDCF, 3))
 
      # Compute the minimum normalized DCF for our model
     thresholds = numpy.array(Scores)
@@ -238,7 +243,7 @@ if __name__ == '__main__':
     matplotlib.pyplot.xlabel('log(π/(1-π))')
     matplotlib.pyplot.ylabel('DCF')
     matplotlib.pyplot.title('Bayes error plot')
-    matplotlib.pyplot.plot(effPriorLogOdds, normalizedDCF, color='r',  label= 'DCF')
+    matplotlib.pyplot.plot(effPriorLogOdds, normalizedDCF, color='r',  label= 'actual DCF')
     matplotlib.pyplot.plot(effPriorLogOdds, minDCF, color='b', label= 'min DCF')
     matplotlib.pyplot.ylim([0, 1.1])
     matplotlib.pyplot.xlim([-3, 3])

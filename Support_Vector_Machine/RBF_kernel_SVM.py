@@ -1,40 +1,20 @@
+from load_data import * 
+from dimensionality_reduction import *
 import numpy
-import scipy
-import sklearn
-import numpy.linalg
 import scipy.optimize
-import sklearn.datasets
 import pylab
 import matplotlib
-from load_data import *
-from dimensionality_reduction import *
 
-def vcol(v):
-    return v.reshape((v.size, 1))
+def mrow(array):
+    return numpy.reshape(array, (1, array.size))
 
-def vrow(v):
-    return v.reshape((1, v.size))
+def mcol(array):
+    return numpy.reshape(array, (array.size, 1))
 
-def logreg_obj_wrap(DTR, LTR, l, prior_tr):
-    M = DTR.shape[0]
-    Z = 2.0*LTR - 1.0
-    def logreg_obj(v):
-        w = vcol(v[0:M])
-        b = v[-1]       
-        S = numpy.dot(w.T, DTR) + b
-        # For the non  weighted version of the model
-        # cxe= numpy.logaddexp(0, -S*Z) # cross-entropy
-        
-        # For the prior weighted version of the model
-        cxe_one = numpy.logaddexp(0, -S[:, Z>0]*Z[Z>0])
-        cxe_minus_one = numpy.logaddexp(0, -S[:, Z<0]*Z[Z<0])
-        return 0.5*l*numpy.linalg.norm(w)**2 + prior_tr*cxe_one.mean() + (1-prior_tr)*cxe_minus_one.mean()
-    return logreg_obj
-    
 def conf_matrix(scores, labs, pr, C_fn, C_fp):
     
     # Computing c* comparing the llr with a threshold t
-    t = - numpy.log((pr*C_fn)/((1-pr)*C_fp))
+    t = - numpy.log(pr*C_fn)/((1-pr)*C_fp)
     
     C_star=numpy.zeros([scores.shape[0],], dtype= int)
     
@@ -51,21 +31,72 @@ def conf_matrix(scores, labs, pr, C_fn, C_fp):
             conf_matr[j,i]= ((C_star==j) * (labs==i)).sum()
     return conf_matr
 
-if __name__=='__main__':
-    prior_array = [4/9, 1/5, 4/5]
-    prior_t = 4/9#prior_array[0]   # prior for training the model
-    prior_tilde =4/9 #prior_array[0]   # prior for evaluate the model
+def RBF_kern_SVM(DTR, LTR, gamma, C, k):
+        
+    Z = numpy.zeros(LTR.shape)
+    Z[LTR == 1] = 1
+    Z[LTR == 0] = -1
+     
+    # kernel(x1, x2)= e^(-gamma*||x1-x2||^2)
+    Dist = mcol((DTR**2).sum(0)) + mrow((DTR**2).sum(0)) - 2*numpy.dot(DTR.T, DTR)
+    H= numpy.exp(- gamma * Dist) + k
+    H = mcol(Z)*mrow(Z)*H
+
+    def JDual(alpha):   # alpha=values of Lagrange multipliers
+        Ha = numpy.dot(H, mcol(alpha))
+        aHa = numpy.dot(mrow(alpha), Ha)
+        a1 = alpha.sum()
+        return -0.5 * aHa.ravel() + a1, -Ha.ravel() + numpy.ones(alpha.size) # grad= - H alpha + 1
+    
+    def LDual(alpha):   # function that we actually minimize -> -loss and -grad
+        loss, grad = JDual(alpha)
+        return -loss, -grad
+    
+    
+    alphaStar, _x, _y = scipy.optimize.fmin_l_bfgs_b(
+        LDual,
+        numpy.zeros(DTR.shape[1]), # initial value are zeros
+        bounds = [(0,C)]*DTR.shape[1],  # values between which the alphas values must remain
+        factr=1.0,
+        maxiter=100000,
+        maxfun=100000,
+    )
+
+    return alphaStar
+
+def compute_scores(alpha_, D_TR, L_TR, D_TE, gamma, k):
+    Z_ = numpy.zeros(L_TR.shape)
+    Z_[L_TR == 1] = 1
+    Z_[L_TR == 0] = -1
+    s_array= numpy.zeros(D_TE.shape[1])
+    for j in range(D_TE.shape[1]):
+        for i in range(D_TR.shape[1]):
+            s_array[j]= s_array[j] + alpha_[i] * Z_[i] * (numpy.exp(- gamma * numpy.linalg.norm(D_TR[:, i] - D_TE[:, j])**2) + k)
+    
+    return s_array
+
+
+if __name__ == '__main__':
+    prior_array= [4/9, 1/5, 4/9] 
+    # prior_t = prior_array[0]   # prior for training the model
+    prior_tilde = prior_array[0]   # prior for evaluate the model
+    
     data = load_data()
     training_data = data[0]
     training_labels = data[1]
-
+    
     training_data = computePCA(training_data, 9)
     
-    lamb = 1e-4;
+    # K fold cross validation 
     K = 5
-
-    scores_list = numpy.zeros([1,1])
+    
+    # parameters for SVM
+    C = 1
+    k_SVM = 1
+    gamma = 1
+    
     real_labels = []
+    scores_list = []
     
     length_of_interval = int(training_data.shape[1]/K)
     index = 0
@@ -90,23 +121,15 @@ if __name__=='__main__':
 
         index = index + length_of_interval
 
-        # Use the scipy function to compute LBFGS method for minimization
-        x0 = numpy.zeros(K_training_set.shape[0] + 1)
-        logreg_obj = logreg_obj_wrap(K_training_set, K_training_labels_set, lamb, prior_t)
-        minimum_position, function_value, dictionary = scipy.optimize.fmin_l_bfgs_b(logreg_obj, x0, approx_grad=True)
-        w_for_minimum = minimum_position[0:-1]
-        b_for_minimum = minimum_position[-1]
-        # Compute S 
-        w_for_minimum = numpy.reshape(w_for_minimum, (1, w_for_minimum.shape[0]))
-        # Compute the scores
-        S = numpy.dot(w_for_minimum, K_validation_set) + b_for_minimum
-        scores_list = numpy.concatenate((scores_list, S), axis=1)
+        alpha_star = RBF_kern_SVM(K_training_set, K_training_labels_set, gamma, C, k_SVM)
+        S = compute_scores(alpha_star, K_training_set, K_training_labels_set, K_validation_set, gamma, k_SVM)
+        scores_list = numpy.concatenate((scores_list, S), axis=0)
         real_labels = numpy.concatenate((real_labels, K_validation_label_set), axis=0)
-    
-    scores_list = scores_list[:, 1:]
+
+
     pred_labels = []
     for i in range(0, training_data.shape[1]):
-        if scores_list[0][i] > 0:
+        if scores_list[i] > 0:
             pred_labels.append(1)
         else:
             pred_labels.append(0)
@@ -126,11 +149,8 @@ if __name__=='__main__':
     print("Confusion matrix: ") 
     print(confusion)
     
-    
-    #This scores are NOT the scores of the LR, but they are minus the log-odds to calaculate DCF
-    Scores = numpy.array(scores_list[0, :]) - numpy.log( prior_t/ (1-(prior_t)) )
-    
-        
+    Scores = numpy.array(scores_list) 
+
     # Compute the calcusus for the ROC diagram
     thresholds_ROC = numpy.array(Scores)
     thresholds_ROC.sort()
@@ -171,9 +191,8 @@ if __name__=='__main__':
     # Normalized DCF
     normDCF = Bemp/Bdummy
     print("Actual normalized DCF", round(normDCF, 3))
-    
- 
-    # Compute the minimum normalized DCF for our model
+
+     # Compute the minimum normalized DCF for our model
     thresholds = numpy.array(Scores)
     Bempirical = numpy.zeros(thresholds.size)
     for idx, t in enumerate(thresholds):
@@ -236,3 +255,14 @@ if __name__=='__main__':
     matplotlib.pyplot.xlim([-3, 3])
     matplotlib.pyplot.legend()
     matplotlib.pyplot.show()
+
+    
+    
+
+
+
+    
+
+    
+    
+    
