@@ -14,6 +14,7 @@ def mrow(array):
 def logpdf_GAU_ND(X, mean, covariance_matrix):
     M = X.shape[0];
     P = numpy.linalg.inv(covariance_matrix)
+    print(P)
     const =  -0.5 * M * numpy.log(2*numpy.pi)
     const += -0.5 * numpy.linalg.slogdet(covariance_matrix)[1]
     
@@ -33,31 +34,31 @@ def GMM_ll_perSample(X, gmm):
         S[g, :] = logpdf_GAU_ND(X, gmm[g][1], gmm[g][2]) + numpy.log(gmm[g][0])
     return scipy.special.logsumexp(S, axis=0)
 
-# def GMM_EM(X, gmm):
-#     llNew = None
-#     llOld = None
-#     G = len(gmm)
-#     N = X.shape[1]
-#     while llOld is None or llNew-llOld > 1e-6:
-#         llOld=llNew
-#         SJ = numpy.zeros((G, N))
-#         for g in range(G):
-#             SJ[g, :] = logpdf_GAU_ND(X, gmm[g][1], gmm[g][2]) + numpy.log(gmm[g][0])
-#         SM = scipy.special.logsumexp(SJ, axis=0)
-#         llNew = SM.sum()/N
-#         P = numpy.exp(SJ-SM)
-#         gmmNew = []
-#         for g in range(G):
-#             gamma = P[g, :]
-#             Z = gamma.sum()
-#             F = (mrow(gamma)*X).sum(1)
-#             S = numpy.dot(X, (mrow(gamma)*X).T)
-#             w = Z/N
-#             mu = mcol(F/Z)
-#             Sigma = S/Z - numpy.dot(mu, mu.T)
-#             gmmNew.append((w, mu, Sigma))
-#         gmm = gmmNew
-#     return gmm
+def GMM_EM(X, gmm):
+    llNew = None
+    llOld = None
+    G = len(gmm)
+    N = X.shape[1]
+    while llOld is None or llNew-llOld > 1e-6:
+        llOld=llNew
+        SJ = numpy.zeros((G, N))
+        for g in range(G):
+            SJ[g, :] = logpdf_GAU_ND(X, gmm[g][1], gmm[g][2]) + numpy.log(gmm[g][0])
+        SM = scipy.special.logsumexp(SJ, axis=0)
+        llNew = SM.sum()/N
+        P = numpy.exp(SJ-SM)
+        gmmNew = []
+        for g in range(G):
+            gamma = P[g, :]
+            Z = gamma.sum()
+            F = (mrow(gamma)*X).sum(1)
+            S = numpy.dot(X, (mrow(gamma)*X).T)
+            w = Z/N
+            mu = mcol(F/Z)
+            Sigma = S/Z - numpy.dot(mu, mu.T)
+            gmmNew.append((w, mu, Sigma))
+        gmm = gmmNew
+    return gmm
 
 def conf_matrix(llratio, labs, pr, C_fn, C_fp):
     
@@ -115,4 +116,20 @@ if __name__=='__main__':
         K_training_labels_set = numpy.concatenate((K_training_labels_set_part1, K_training_labels_set_part2), axis=None)
 
         index = index + length_of_interval
+
+        gmm = [(0.33, -2*mcol(numpy.ones(9)), 1*numpy.eye(9)), (0.33, 0*mcol(numpy.ones(9)), 1*numpy.eye(9)), (0.33, 2*mcol(numpy.ones(9)), 1*numpy.eye(9))]
+        trial_0 = numpy.zeros((9, 1))
+        trial_1 = numpy.zeros((9, 1))
+        for i in range(K_training_set.shape[1]):
+            if(K_training_labels_set[i] == 0):
+                trial_0 = numpy.concatenate((trial_0, mcol(K_training_set[:, i])), axis=1)
+            else:
+                trial_1 = numpy.concatenate((trial_1, mcol(K_training_set[:, i])), axis=1)
+        trial_0 = trial_0[:, 1:]
+        trial_1 = trial_1[:, 1:]
+        gmm_result_0 = GMM_EM(trial_0, gmm)
+        gmm_result_1 = GMM_EM(trial_1, gmm)
+        print('0: ', gmm_result_0)
+        print('1: ', gmm_result_1)
+
 
