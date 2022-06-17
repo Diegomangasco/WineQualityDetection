@@ -107,7 +107,7 @@ if __name__=='__main__':
 
     K = 5
     
-    components= 2
+    components= 4
 
     real_labels = []
     log_scores = numpy.zeros([1,2])
@@ -139,8 +139,15 @@ if __name__=='__main__':
         mean_1 = mean(1, K_training_set, K_training_labels_set)
         covariance_matrix_0 = covariance(0, K_training_set, K_training_labels_set)
         covariance_matrix_1 = covariance(1, K_training_set, K_training_labels_set)
+       
+        K_training_set_0=  K_training_set[:, K_training_labels_set==0]
+        K_training_set_1=  K_training_set[:, K_training_labels_set==1] 
         
-        
+        # compute the tied covariance
+        N_0 = K_training_set_0.shape[1]
+        N_1 = K_training_set_1.shape[1]
+        tied_covariance = (1/K_training_set.shape[1])*(covariance_matrix_0*N_0 + covariance_matrix_1*N_1)
+       
         gmm_array0= []
         gmm_array1= []
 
@@ -166,7 +173,7 @@ if __name__=='__main__':
             cnt= cnt + 1
         
         for c in range(components):
-            gmm_array0.append((weight, mcol(mean_vec0[:, c]), covariance_matrix_0))
+            gmm_array0.append((weight, mcol(mean_vec0[:, c]), tied_covariance))
             
            
         mean_vec1= numpy.zeros((mean_1.shape[0], components))
@@ -179,16 +186,12 @@ if __name__=='__main__':
             cnt= cnt + 1
         
         for c in range(components):
-            gmm_array1.append((weight, mcol(mean_vec1[:, c]), covariance_matrix_1))
+            gmm_array1.append((weight, mcol(mean_vec1[:, c]), tied_covariance))
         
-        
-        K_training_set_0=  K_training_set[:, K_training_labels_set==0]
-        K_training_set_1=  K_training_set[:, K_training_labels_set==1]
         
         gmm0= GMM_EM(K_training_set_0, gmm_array0)
         gmm1= GMM_EM(K_training_set_1, gmm_array1)
-        print(gmm0[0][0])
-        print(gmm0[1][0])
+        
         weighted_logS0= weighted_logS(K_validation_set, gmm0)
         weighted_logS1= weighted_logS(K_validation_set, gmm1)
         logS= numpy.concatenate((weighted_logS0, weighted_logS1), axis=0)
@@ -344,3 +347,4 @@ if __name__=='__main__':
        
        
         
+

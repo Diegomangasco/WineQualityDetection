@@ -140,6 +140,9 @@ if __name__=='__main__':
         covariance_matrix_0 = covariance(0, K_training_set, K_training_labels_set)
         covariance_matrix_1 = covariance(1, K_training_set, K_training_labels_set)
         
+        #compute the diagonal covariance
+        diag_covariance_matrix_0=  covariance_matrix_0 * numpy.eye(covariance_matrix_0.shape[1])
+        diag_covariance_matrix_1=  covariance_matrix_1 * numpy.eye(covariance_matrix_1.shape[1])
         
         gmm_array0= []
         gmm_array1= []
@@ -166,7 +169,7 @@ if __name__=='__main__':
             cnt= cnt + 1
         
         for c in range(components):
-            gmm_array0.append((weight, mcol(mean_vec0[:, c]), covariance_matrix_0))
+            gmm_array0.append((weight, mcol(mean_vec0[:, c]), diag_covariance_matrix_0))
             
            
         mean_vec1= numpy.zeros((mean_1.shape[0], components))
@@ -179,7 +182,7 @@ if __name__=='__main__':
             cnt= cnt + 1
         
         for c in range(components):
-            gmm_array1.append((weight, mcol(mean_vec1[:, c]), covariance_matrix_1))
+            gmm_array1.append((weight, mcol(mean_vec1[:, c]), diag_covariance_matrix_1))
         
         
         K_training_set_0=  K_training_set[:, K_training_labels_set==0]
@@ -344,3 +347,4 @@ if __name__=='__main__':
        
        
         
+
