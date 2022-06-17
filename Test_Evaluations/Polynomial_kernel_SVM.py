@@ -75,64 +75,31 @@ def compute_scores(alpha_, D_TR, L_TR, d, D_TE, c, k):
     return s_array
     
     
-
-
 if __name__ == '__main__':
     prior_array= [4/9, 1/5, 4/5] 
-    prior_t = prior_array[0]   # prior for training the model
+    #prior_t = prior_array[0]   # prior for training the model
     prior_tilde = prior_array[0]   # prior for evaluate the model
     data = load_data()
     training_data = data[0]
     training_labels = data[1]
+    test_data = data[2]
+    test_labels = data[3]
     
-    training_data = computePCA(training_data, 9)
+    # training_data = computePCA(training_data, 9)
+    # test_data = computePCA(test_data, 9)
 
-    # K fold cross validation 
-    K = 5
-    
     # parameters for SVM
     C = 1
     k_SVM = 1
     d = 2
     c=1
     
-    real_labels = []
-    scores_list = []
-    
-    length_of_interval = int(training_data.shape[1]/K)
-    index = 0
-    counter = 0
-    # For cycle for doing K fold cross validation 
-    while index <= (training_data.shape[1] - length_of_interval):
-        # Take one section as validation set
-        start = index
-        if counter < K-1:
-            end = index + length_of_interval
-        else:
-            end = index + length_of_interval + (training_data.shape[1]-K*length_of_interval)
-        counter += 1
-        K_validation_set = training_data[:, start:end]
-        K_validation_label_set = training_labels[start:end]
-        K_training_set_part1 = training_data[:, 0:start]
-        K_training_set_part2 = training_data[:, end:]
-        K_training_set = numpy.concatenate((K_training_set_part1, K_training_set_part2), axis=1)
-        K_training_labels_set_part1 = training_labels[0:start]
-        K_training_labels_set_part2 = training_labels[end:]
-        K_training_labels_set = numpy.concatenate((K_training_labels_set_part1, K_training_labels_set_part2), axis=None)
-
-        index = index + length_of_interval
-
-        alpha_star = poly_kern_SVM(K_training_set, K_training_labels_set, C, k_SVM, d, c)
-        
-        S =  compute_scores(alpha_star, K_training_set, K_training_labels_set, d, K_validation_set, c, k_SVM)
-        scores_list = numpy.concatenate((scores_list, S), axis=0)
-        real_labels = numpy.concatenate((real_labels, K_validation_label_set), axis=0)
-
-    
+    alpha_star = poly_kern_SVM(training_data, training_labels, C, k_SVM, d, c)   
+    S =  compute_scores(alpha_star, training_data, training_labels, d, test_data, c, k_SVM)
     
     pred_labels = []
-    for i in range(0, training_data.shape[1]):
-        if scores_list[i] > 0:
+    for i in range(0, test_data.shape[1]):
+        if S[i] > 0:
             pred_labels.append(1)
         else:
             pred_labels.append(0)
@@ -141,7 +108,7 @@ if __name__ == '__main__':
     confusion = numpy.zeros([2,2], dtype=int)
     for j in range(2):
         for i in range(2):
-            confusion[j,i] = ((pred_labels==j) * (real_labels==i)).sum()
+            confusion[j,i] = ((pred_labels==j) * (test_labels==i)).sum()
  
     FNR_ = confusion[0,1]/(confusion[0,1] + confusion[1,1])
     FPR_ = confusion[1,0]/(confusion[1,0] + confusion[0,0])
@@ -152,7 +119,7 @@ if __name__ == '__main__':
     print("Confusion matrix: ") 
     print(confusion)
     
-    Scores = numpy.array(scores_list) 
+    Scores = numpy.array(S) 
     
     # Compute the calcusus for the ROC diagram
     thresholds_ROC = numpy.array(Scores)
@@ -167,7 +134,7 @@ if __name__ == '__main__':
         for j in range(2):
             for i in range(2):
                 # Confusion matrix for each threshold
-                Conf[j, i] = ((Pred==j) * (real_labels==i)).sum()
+                Conf[j, i] = ((Pred==j) * (test_labels==i)).sum()
         TPR[idx] = Conf[1,1] / (Conf[1,1]+Conf[0,1]) 
         FPR[idx] = Conf[1,0] / (Conf[1,0]+Conf[0,0])
     
@@ -184,7 +151,7 @@ if __name__ == '__main__':
     Cost_matrix[0,1] = Cfn
     Cost_matrix[1,0] = Cfp
     # Compute the confusion matrix with the llr calculated previously and with real_labels from the k fold 
-    confusion__matrix = conf_matrix(Scores, real_labels, prior_tilde, Cfn, Cfp)
+    confusion__matrix = conf_matrix(Scores, test_labels, prior_tilde, Cfn, Cfp)
     FNR_DCF = confusion__matrix[0,1] / ( confusion__matrix[0,1] + confusion__matrix[1,1])
     FPR_DCF = confusion__matrix[1,0] / ( confusion__matrix[1,0] + confusion__matrix[0,0])
     # Bayes empirical risk
@@ -203,7 +170,7 @@ if __name__ == '__main__':
         Conf = numpy.zeros((2, 2))
         for j in range(2):
             for i in range(2):
-                Conf[j, i] = ((Pred==j) * (real_labels==i)).sum()
+                Conf[j, i] = ((Pred==j) * (test_labels==i)).sum()
         FNR_minDCF = Conf[0,1] / (Conf[0,1] + Conf[1,1])
         FPR_minDCF = Conf[1,0] / (Conf[1,0] + Conf[0,0])
         Bempirical[idx]= prior_tilde*Cfn*FNR_minDCF + (1-prior_tilde)*Cfp*FPR_minDCF
@@ -225,7 +192,7 @@ if __name__ == '__main__':
         eff_prior= 1/ (1 + numpy.exp( - effPriorLogOdds[index]))
         # Compute the actual DCF
         Bdummy = min(eff_prior*Cfn, (1-eff_prior)*Cfp)
-        c_m = conf_matrix(Scores, real_labels, eff_prior, Cfn, Cfp)
+        c_m = conf_matrix(Scores, test_labels, eff_prior, Cfn, Cfp)
         FNR_actualDCF =  c_m[0,1] / (c_m[0,1] + c_m[1,1])
         FPR_actualDCF =  c_m[1,0] / (c_m[1,0] + c_m[0,0])
         Bemp_actualDCF = eff_prior*Cfn*FNR_actualDCF + (1-eff_prior)*Cfp*FPR_actualDCF
@@ -239,7 +206,7 @@ if __name__ == '__main__':
             Conf = numpy.zeros((2, 2))
             for j in range(2):
                 for i in range(2):
-                    Conf[j, i]= ((Pred==j) * (real_labels==i)).sum()
+                    Conf[j, i]= ((Pred==j) * (test_labels==i)).sum()
             FNR_minDCF = Conf[0,1] / (Conf[0,1] + Conf[1,1])
             FPR_minDCF = Conf[1,0] / (Conf[1,0] + Conf[0,0])
             Bemp_minDCF[idx]= eff_prior*Cfn*FNR_minDCF + (1-eff_prior)*Cfp*FPR_minDCF
