@@ -1,5 +1,6 @@
 from load_data import * 
 from dimensionality_reduction import *
+from Gaussianization import *
 import numpy
 import scipy
 import scipy.special
@@ -60,8 +61,10 @@ if __name__=='__main__':
     data = load_data()
     training_data = data[0]
     training_labels = data[1]
+     
+    training_data = gaussianization(training_data)
     
-    training_data = computePCA(training_data, 9)
+    training_data = computePCA(training_data, 7)
 
     K = 5
 

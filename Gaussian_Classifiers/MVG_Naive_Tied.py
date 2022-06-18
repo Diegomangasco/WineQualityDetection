@@ -1,5 +1,6 @@
 from load_data import * 
 from dimensionality_reduction import *
+from Gaussianization import *
 import numpy
 import scipy
 import scipy.special
@@ -56,12 +57,14 @@ def conf_matrix(llratio, labs, pr, C_fn, C_fp):
 
 if __name__=='__main__':
     prior_array= [4/9, 1/5, 4/5]
-    prior = prior_array[0]
+    prior = prior_array[2]
     data = load_data()
     training_data = data[0]
     training_labels = data[1]
     
-    training_data = computePCA(training_data, 9)
+    training_data = gaussianization(training_data)
+    
+    training_data = computePCA(training_data, 7)
 
     K = 5
 
