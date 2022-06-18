@@ -152,7 +152,8 @@ if __name__=='__main__':
         U1, s1, _ = numpy.linalg.svd(covariance_matrix_1)
         alpha1= 1
         d1 = U1[:, 0:1] * s1[0]**0.5 * alpha1
-        weight= 1.0/components
+        #weight= 1.0/components
+        weight = [0.8, 0.2]
        
         mean_vec0= numpy.zeros((mean_0.shape[0], components))
         
@@ -166,7 +167,7 @@ if __name__=='__main__':
             cnt= cnt + 1
         
         for c in range(components):
-            gmm_array0.append((weight, mcol(mean_vec0[:, c]), covariance_matrix_0))
+            gmm_array0.append((weight[c], mcol(mean_vec0[:, c]), covariance_matrix_0))
             
            
         mean_vec1= numpy.zeros((mean_1.shape[0], components))
@@ -179,7 +180,7 @@ if __name__=='__main__':
             cnt= cnt + 1
         
         for c in range(components):
-            gmm_array1.append((weight, mcol(mean_vec1[:, c]), covariance_matrix_1))
+            gmm_array1.append((weight[c], mcol(mean_vec1[:, c]), covariance_matrix_1))
         
         
         K_training_set_0=  K_training_set[:, K_training_labels_set==0]
@@ -187,8 +188,6 @@ if __name__=='__main__':
         
         gmm0= GMM_EM(K_training_set_0, gmm_array0)
         gmm1= GMM_EM(K_training_set_1, gmm_array1)
-        print(gmm0[0][0])
-        print(gmm0[1][0])
         weighted_logS0= weighted_logS(K_validation_set, gmm0)
         weighted_logS1= weighted_logS(K_validation_set, gmm1)
         logS= numpy.concatenate((weighted_logS0, weighted_logS1), axis=0)

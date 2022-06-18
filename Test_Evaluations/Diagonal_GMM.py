@@ -131,7 +131,8 @@ if __name__=='__main__':
     U1, s1, _ = numpy.linalg.svd(covariance_matrix_1)
     alpha1= 1
     d1 = U1[:, 0:1] * s1[0]**0.5 * alpha1
-    weight= 1.0/components
+    #weight= 1.0/components
+    weight = [0.8, 0.2]
     
     mean_vec0= numpy.zeros((mean_0.shape[0], components))
     
@@ -145,7 +146,7 @@ if __name__=='__main__':
         cnt= cnt + 1
     
     for c in range(components):
-        gmm_array0.append((weight, mcol(mean_vec0[:, c]), diag_covariance_matrix_0))
+        gmm_array0.append((weight[c], mcol(mean_vec0[:, c]), diag_covariance_matrix_0))
         
         
     mean_vec1= numpy.zeros((mean_1.shape[0], components))
@@ -158,7 +159,7 @@ if __name__=='__main__':
         cnt= cnt + 1
     
     for c in range(components):
-        gmm_array1.append((weight, mcol(mean_vec1[:, c]), diag_covariance_matrix_1))
+        gmm_array1.append((weight[c], mcol(mean_vec1[:, c]), diag_covariance_matrix_1))
     
     
     K_training_set_0=  training_data[:, training_labels==0]
