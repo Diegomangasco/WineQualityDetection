@@ -66,6 +66,10 @@ def GMM_EM(X, gmm):
             w = Z/N
             mu = mcol(F/Z)
             Sigma = S/Z - numpy.dot(mu, mu.T)
+            U, s, _ = numpy.linalg.svd(Sigma)
+            psi=1
+            s[s<psi] = psi
+            Sigma = numpy.dot(U, mcol(s)*U.T)
             gmmNew.append((w, mu, Sigma))
         gmm = gmmNew
     return gmm
@@ -108,7 +112,7 @@ if __name__=='__main__':
 
     K = 5
     
-    components= 4
+    components= 8
     iterations= 0
 
     real_labels = []
@@ -172,11 +176,23 @@ if __name__=='__main__':
                 mean_vec1[:, 0]= (mcol(mean_1[:, 0]) + d1).ravel()
                 mean_vec1[:, 1]= (mcol(mean_1[:, 0]) - d1).ravel()
                 
-                for c in range(comp):
-                    gmm_array0.append((weight, mcol(mean_vec0[:, c]), covariance_matrix_0))
+                cov_matr0_New= covariance_matrix_0
+                U, s, _ = numpy.linalg.svd(cov_matr0_New)
+                psi=1
+                s[s<psi] = psi
+                cov_matr0_New = numpy.dot(U, mcol(s)*U.T)
+                
+                cov_matr1_New= covariance_matrix_1
+                U, s, _ = numpy.linalg.svd(cov_matr1_New)
+                psi=1
+                s[s<psi] = psi
+                cov_matr1_New = numpy.dot(U, mcol(s)*U.T)
                 
                 for c in range(comp):
-                    gmm_array1.append((weight, mcol(mean_vec1[:, c]), covariance_matrix_1))
+                    gmm_array0.append((weight, mcol(mean_vec0[:, c]), cov_matr0_New))
+                
+                for c in range(comp):
+                    gmm_array1.append((weight, mcol(mean_vec1[:, c]), cov_matr1_New))
                 
                 gmm0= GMM_EM(K_training_set_0, gmm_array0)
                 gmm1= GMM_EM(K_training_set_1, gmm_array1)
@@ -187,18 +203,23 @@ if __name__=='__main__':
                 weight1_array= numpy.zeros((comp))
                 d0_array= numpy.zeros((mean_0.shape[0], (int(comp/2))))
                 d1_array= numpy.zeros((mean_1.shape[0], (int(comp/2))))
+                cov_array0=[]
+                cov_array1=[]
                 
                 for c in range(int(comp/2)):
                     U0, s0, _ = numpy.linalg.svd(gmm0[c][2])
+                    cov_array0.append(gmm0[c][2])
+                    cov_array0.append(gmm0[c][2])
                     alpha0= 1
                     d0_array[:, c] = (U0[:, 0:1] * s0[0]**0.5 * alpha0).ravel()
                 
                 for c in range(int(comp/2)):
                     U1, s1, _ = numpy.linalg.svd(gmm1[c][2])
+                    cov_array1.append(gmm1[c][2])
+                    cov_array1.append(gmm1[c][2])
                     alpha1= 1
                     d1_array[:, c] = (U1[:, 0:1] * s1[0]**0.5 * alpha1).ravel()
                     
-               
                 for c in range(int(comp/2)):
                     weight0_array[2*c]= gmm0[c][0]/2
                     weight0_array[(2*c)+1]= gmm0[c][0]/2
@@ -220,9 +241,9 @@ if __name__=='__main__':
                     mean_vec1[:, ((2*c)+1)]= (mcol(gmm1[c][1]) -  mcol(d1_array[:, c])).ravel()
                     
                 for c in range(comp):
-                    gmm_array0.append((weight0_array[c], mcol(mean_vec0[:, c]), covariance_matrix_0))
+                    gmm_array0.append((weight0_array[c], mcol(mean_vec0[:, c]), cov_array0[c]))
                 for c in range(comp):
-                    gmm_array1.append((weight1_array[c], mcol(mean_vec1[:, c]), covariance_matrix_1))
+                    gmm_array1.append((weight1_array[c], mcol(mean_vec1[:, c]), cov_array1[c]))
                
                 gmm0= GMM_EM(K_training_set_0, gmm_array0)
                 gmm1= GMM_EM(K_training_set_1, gmm_array1)
