@@ -4,6 +4,7 @@ import matplotlib
 import pylab
 from load_data import * 
 from dimensionality_reduction import *
+from Gaussianization import *
 
 
 def mcol(array):
@@ -125,11 +126,12 @@ if __name__=='__main__':
     training_data = data[0]
     training_labels = data[1]
     
-    training_data = computePCA(training_data, 9)
+    training_data = gaussianization(training_data)
+    training_data = computePCA(training_data, 10)
 
     K = 5
     
-    components= 8
+    components= 2
     iterations=0
 
     real_labels = []
@@ -266,7 +268,6 @@ if __name__=='__main__':
                 gmm0= GMM_EM(K_training_set_0, gmm_array0)
                 gmm1= GMM_EM(K_training_set_1, gmm_array1)
         iterations=0
-        
         
         weighted_logS0= weighted_logS(K_validation_set, gmm0)
         weighted_logS1= weighted_logS(K_validation_set, gmm1)
