@@ -132,7 +132,7 @@ if __name__=='__main__':
     K = 5
     
     components= 2
-    iterations=0
+    iterations= 0
 
     real_labels = []
     log_scores = numpy.zeros([1,2])
@@ -278,7 +278,7 @@ if __name__=='__main__':
     
     
     log_scores = log_scores[1:, :]
-    print(log_scores.shape)
+    
     Pc_0 = numpy.log(1-prior)
     Pc_1 = numpy.log(prior)
     logSJoint_0 = log_scores[:, 0] + Pc_0
@@ -315,6 +315,10 @@ if __name__=='__main__':
     llr = numpy.zeros([S.shape[0]])
     for i in range(log_scores.shape[0]):    
         llr[i] = numpy.log(S[i,1]/S[i,0])
+    
+    # to create a file with the scores
+    llr_tied_gmm_for_file= numpy.asarray(llr)
+    numpy.save('llr_tied_gmm.npy', llr_tied_gmm_for_file)
         
     # Compute the calcusus for the ROC diagram
     thresholds = numpy.array(llr)
