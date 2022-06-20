@@ -67,7 +67,7 @@ def GMM_EM(X, gmm):
             mu = mcol(F/Z)
             Sigma = S/Z - numpy.dot(mu, mu.T)
             U, s, _ = numpy.linalg.svd(Sigma)
-            psi=1
+            psi=0.01
             s[s<psi] = psi
             Sigma = numpy.dot(U, mcol(s)*U.T)
             gmmNew.append((w, mu, Sigma))
@@ -178,13 +178,13 @@ if __name__=='__main__':
                 
                 cov_matr0_New= covariance_matrix_0
                 U, s, _ = numpy.linalg.svd(cov_matr0_New)
-                psi=1
+                psi=0.01
                 s[s<psi] = psi
                 cov_matr0_New = numpy.dot(U, mcol(s)*U.T)
                 
                 cov_matr1_New= covariance_matrix_1
                 U, s, _ = numpy.linalg.svd(cov_matr1_New)
-                psi=1
+                psi=0.01
                 s[s<psi] = psi
                 cov_matr1_New = numpy.dot(U, mcol(s)*U.T)
                 

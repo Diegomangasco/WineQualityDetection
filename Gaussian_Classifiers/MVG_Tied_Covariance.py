@@ -62,9 +62,9 @@ if __name__=='__main__':
     training_data = data[0]
     training_labels = data[1]
      
-    training_data = gaussianization(training_data)
+    #training_data = gaussianization(training_data)
     
-    training_data = computePCA(training_data, 7)
+    training_data = computePCA(training_data, 9)
 
     K = 5
 
@@ -249,8 +249,8 @@ if __name__=='__main__':
     matplotlib.pyplot.xlabel('log(π/(1-π))')
     matplotlib.pyplot.ylabel('DCF')
     matplotlib.pyplot.title('Bayes error plot')
-    matplotlib.pyplot.plot(effPriorLogOdds, normalizedDCF, color='r',  label= 'DCF')
-    matplotlib.pyplot.plot(effPriorLogOdds, minDCF, color='b', label= 'min DCF')
+    matplotlib.pyplot.plot(effPriorLogOdds, normalizedDCF, color='r',  label= 'Tied, with PCA (m=9) - act DCF')
+    matplotlib.pyplot.plot(effPriorLogOdds, minDCF, color='b', label= 'Tied,  with PCA (m=9) - min DCF')
     matplotlib.pyplot.ylim([0, 1.1])
     matplotlib.pyplot.xlim([-3, 3])
     matplotlib.pyplot.legend()

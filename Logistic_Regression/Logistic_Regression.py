@@ -53,8 +53,8 @@ def conf_matrix(scores, labs, pr, C_fn, C_fp):
 
 if __name__=='__main__':
     prior_array = [4/9, 1/5, 4/5]
-    prior_t = 4/9#prior_array[0]   # prior for training the model
-    prior_tilde =4/9 #prior_array[0]   # prior for evaluate the model
+    prior_t = prior_array[1]   # prior for training the model
+    prior_tilde =prior_array[1]   # prior for evaluate the model
     data = load_data()
     training_data = data[0]
     training_labels = data[1]
@@ -230,8 +230,8 @@ if __name__=='__main__':
     matplotlib.pyplot.xlabel('log(π/(1-π))')
     matplotlib.pyplot.ylabel('DCF')
     matplotlib.pyplot.title('Bayes error plot')
-    matplotlib.pyplot.plot(effPriorLogOdds, normalizedDCF, color='r',  label= 'actual DCF')
-    matplotlib.pyplot.plot(effPriorLogOdds, minDCF, color='b', label= 'min DCF')
+    matplotlib.pyplot.plot(effPriorLogOdds, normalizedDCF, color='r',  label= 'LR(λ=1e-4, πT=1/5), with PCA(m=9) - act DCF')
+    matplotlib.pyplot.plot(effPriorLogOdds, minDCF, color='b', label= 'LR(λ=1e-4, πT=1/5), with PCA(m=9) - min DCF')
     matplotlib.pyplot.ylim([0, 1.1])
     matplotlib.pyplot.xlim([-3, 3])
     matplotlib.pyplot.legend()
