@@ -121,7 +121,7 @@ def weighted_logS(D, gmm_):
 
 if __name__=='__main__':
     prior_array= [4/9, 1/5, 4/5]
-    prior = prior_array[2]
+    prior = prior_array[0]
     data = load_data()
     training_data = data[0]
     training_labels = data[1]
@@ -139,11 +139,11 @@ if __name__=='__main__':
     covariance_matrix_0 = covariance(0, training_data, training_labels)
     covariance_matrix_1 = covariance(1, training_data, training_labels)
     
-    K_training_set_0=  training_data[:, training_labels==0]
-    K_training_set_1=  training_data[:, training_labels==1]
+    training_set_0=  training_data[:, training_labels==0]
+    training_set_1=  training_data[:, training_labels==1]
     # compute the tied covariance
-    N_0 = K_training_set_0.shape[1]
-    N_1 = K_training_set_1.shape[1]
+    N_0 = training_set_0.shape[1]
+    N_1 = training_set_1.shape[1]
     tied_covariance = (1/training_data.shape[1])*(covariance_matrix_0*N_0 + covariance_matrix_1*N_1)
     
     gmm_array0= []
@@ -187,8 +187,8 @@ if __name__=='__main__':
             for c in range(comp):
                 gmm_array1.append((weight, mcol(mean_vec1[:, c]),  tied_cov_new))
             
-            gmm0= GMM_EM(K_training_set_0, gmm_array0)
-            gmm1= GMM_EM(K_training_set_1, gmm_array1)
+            gmm0= GMM_EM(training_set_0, gmm_array0)
+            gmm1= GMM_EM(training_set_1, gmm_array1)
         else:
             gmm_array0= []
             gmm_array1= []
@@ -238,8 +238,8 @@ if __name__=='__main__':
             for c in range(comp):
                 gmm_array1.append((weight1_array[c], mcol(mean_vec1[:, c]), cov_array1[c]))
             
-            gmm0= GMM_EM(K_training_set_0, gmm_array0)
-            gmm1= GMM_EM(K_training_set_1, gmm_array1)
+            gmm0= GMM_EM(training_set_0, gmm_array0)
+            gmm1= GMM_EM(training_set_1, gmm_array1)
     
     weighted_logS0= weighted_logS(test_data, gmm0)
     weighted_logS1= weighted_logS(test_data, gmm1)
@@ -261,12 +261,14 @@ if __name__=='__main__':
     # The function ArgMax returns the indices of the maximum values along the indicated axis
     # In our case we have two columns, one for each class and we want to find the Maximum Likelihood for each sample (each row of the matrix)
     Predicted_labels = numpy.argmax(SPost, axis=1) 
+    
    
     # Compute the confusion matrix, accurancy and error rates
     confusion = numpy.zeros([2,2], dtype=int)
     for j in range(2):
         for i in range(2):
-            confusion[j,i] = ((Predicted_labels==j) * (test_data==i)).sum()
+            confusion[j,i] = ((Predicted_labels==j) * (test_labels==i)).sum()
+    
  
     FNR_ = confusion[0,1]/(confusion[0,1]+ confusion[1,1])
     FPR_ = confusion[1,0]/(confusion[1,0]+ confusion[0,0])

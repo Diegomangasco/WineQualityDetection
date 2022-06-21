@@ -121,8 +121,8 @@ if __name__=='__main__':
     mean_1 = mean(1, training_data, training_labels)
     covariance_matrix_0 = covariance(0, training_data, training_labels)
     covariance_matrix_1 = covariance(1, training_data, training_labels)
-    K_training_set_0=  training_data[:, training_labels==0]
-    K_training_set_1=  training_data[:, training_labels==1]
+    training_set_0=  training_data[:, training_labels==0]
+    training_set_1=  training_data[:, training_labels==1]
     
     gmm_array0= []
     gmm_array1= [] 
@@ -170,8 +170,8 @@ if __name__=='__main__':
             for c in range(comp):
                 gmm_array1.append((weight, mcol(mean_vec1[:, c]), cov_matr1_New))
             
-            gmm0= GMM_EM(K_training_set_0, gmm_array0)
-            gmm1= GMM_EM(K_training_set_1, gmm_array1)
+            gmm0= GMM_EM(training_set_0, gmm_array0)
+            gmm1= GMM_EM(training_set_1, gmm_array1)
         else:
             gmm_array0= []
             gmm_array1= []
@@ -221,8 +221,8 @@ if __name__=='__main__':
             for c in range(comp):
                 gmm_array1.append((weight1_array[c], mcol(mean_vec1[:, c]), cov_array1[c]))
             
-            gmm0= GMM_EM(K_training_set_0, gmm_array0)
-            gmm1= GMM_EM(K_training_set_1, gmm_array1)
+            gmm0= GMM_EM(training_set_0, gmm_array0)
+            gmm1= GMM_EM(training_set_1, gmm_array1)
         
     weighted_logS0= weighted_logS(test_data, gmm0)
     weighted_logS1= weighted_logS(test_data, gmm1)
