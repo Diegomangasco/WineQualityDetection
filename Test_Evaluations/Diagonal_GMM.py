@@ -66,7 +66,12 @@ def GMM_EM(X, gmm):
             w = Z/N
             mu = mcol(F/Z)
             Sigma = S/Z - numpy.dot(mu, mu.T)
-            gmmNew.append((w, mu, Sigma))
+            Sigma_diag= Sigma * numpy.eye(covariance_matrix_0.shape[1])
+            U, s, _ = numpy.linalg.svd(Sigma_diag)
+            psi=0.01
+            s[s<psi] = psi
+            Sigma_diag = numpy.dot(U, mcol(s)*U.T)
+            gmmNew.append((w, mu, Sigma_diag))
         gmm = gmmNew
     return gmm
 
@@ -104,11 +109,12 @@ if __name__=='__main__':
     training_labels = data[1]
     test_data = data[2]
     test_labels = data[3]
-
-    # training_data = computePCA(training_data, 9)
-    # test_data = computePCA(test_data, 9)
     
-    components= 2
+    P, training_data = computePCA(training_data, 9)
+    test_data = numpy.dot(P.T, test_data)
+    
+    components= 4
+    iterations= 0
 
         
     mean_0 = mean(0, training_data, training_labels)
@@ -116,65 +122,119 @@ if __name__=='__main__':
     covariance_matrix_0 = covariance(0, training_data, training_labels)
     covariance_matrix_1 = covariance(1, training_data, training_labels)
     
+    K_training_set_0=  training_data[:, training_labels==0]
+    K_training_set_1=  training_data[:, training_labels==1]
+    
     #compute the diagonal covariance
     diag_covariance_matrix_0=  covariance_matrix_0 * numpy.eye(covariance_matrix_0.shape[1])
     diag_covariance_matrix_1=  covariance_matrix_1 * numpy.eye(covariance_matrix_1.shape[1])
     
     gmm_array0= []
-    gmm_array1= []
-
+    gmm_array1= [] 
+    gmm0=[]
+    gmm1=[]
+    
+    while iterations < numpy.log2(components):
+        iterations= iterations + 1
+        weight= 0
+        comp= 2**iterations
+        if iterations== 1:
+            weight = 1.0/comp
+            
+            mean_vec0= numpy.zeros((mean_0.shape[0], comp))
+            
+            U0, s0, _ = numpy.linalg.svd(covariance_matrix_0)
+            alpha0= 1
+            d0 = U0[:, 0:1] * s0[0]**0.5 * alpha0
+            
+            U1, s1, _ = numpy.linalg.svd(covariance_matrix_1)
+            alpha1= 1
+            d1 = U1[:, 0:1] * s1[0]**0.5 * alpha1
+            
+            mean_vec0[:, 0]= (mcol(mean_0[:, 0]) + d0).ravel()
+            mean_vec0[:, 1]= (mcol(mean_0[:, 0]) - d0).ravel()
+            mean_vec1= numpy.zeros((mean_1.shape[0], comp))
+            mean_vec1[:, 0]= (mcol(mean_1[:, 0]) + d1).ravel()
+            mean_vec1[:, 1]= (mcol(mean_1[:, 0]) - d1).ravel()
+            
+            diag_cov_0_New= diag_covariance_matrix_0 
+            U, s, _ = numpy.linalg.svd(diag_cov_0_New)
+            psi=0.01
+            s[s<psi] = psi
+            diag_cov_0_New = numpy.dot(U, mcol(s)*U.T)
+            
+            diag_cov_1_New= diag_covariance_matrix_1
+            U, s, _ = numpy.linalg.svd(diag_cov_1_New)
+            psi=0.01
+            s[s<psi] = psi
+            diag_cov_1_New = numpy.dot(U, mcol(s)*U.T)
+            
+            for c in range(comp):
+                gmm_array0.append((weight, mcol(mean_vec0[:, c]), diag_cov_0_New))
+            
+            for c in range(comp):
+                gmm_array1.append((weight, mcol(mean_vec1[:, c]), diag_cov_1_New))
+            
+            gmm0= GMM_EM(K_training_set_0, gmm_array0)
+            gmm1= GMM_EM(K_training_set_1, gmm_array1)
+        else:
+            gmm_array0= []
+            gmm_array1= []
+            weight0_array= numpy.zeros((comp))
+            weight1_array= numpy.zeros((comp))
+            d0_array= numpy.zeros((mean_0.shape[0], (int(comp/2))))
+            d1_array= numpy.zeros((mean_1.shape[0], (int(comp/2))))
+            cov_array0=[]
+            cov_array1=[]
+            
+            for c in range(int(comp/2)):
+                U0, s0, _ = numpy.linalg.svd(gmm0[c][2])
+                cov_array0.append(gmm0[c][2])
+                cov_array0.append(gmm0[c][2])
+                alpha0= 1
+                d0_array[:, c] = (U0[:, 0:1] * s0[0]**0.5 * alpha0).ravel()
+            
+            for c in range(int(comp/2)):
+                U1, s1, _ = numpy.linalg.svd(gmm1[c][2])
+                cov_array1.append(gmm1[c][2])
+                cov_array1.append(gmm1[c][2])
+                alpha1= 1
+                d1_array[:, c] = (U1[:, 0:1] * s1[0]**0.5 * alpha1).ravel()
+                
+            for c in range(int(comp/2)):
+                weight0_array[2*c]= gmm0[c][0]/2
+                weight0_array[(2*c)+1]= gmm0[c][0]/2
+                
+            for c in range(int(comp/2)):
+                weight1_array[2*c]= gmm1[c][0]/2
+                weight1_array[(2*c)+1]= gmm1[c][0]/2
+            
+            mean_vec0= numpy.zeros((mean_0.shape[0], comp))
+            
+            for c in range(int(comp/2)):
+                mean_vec0[:, 2*c]= (mcol(gmm0[c][1]) + mcol(d0_array[:, c])).ravel()
+                mean_vec0[:, ((2*c)+1)]= (mcol(gmm0[c][1]) -  mcol(d0_array[:, c])).ravel()
+            
+            mean_vec1= numpy.zeros((mean_1.shape[0], comp))
+            
+            for c in range(int(comp/2)):
+                mean_vec1[:, 2*c]= (mcol(gmm1[c][1]) +  mcol(d1_array[:, c])).ravel()
+                mean_vec1[:, ((2*c)+1)]= (mcol(gmm1[c][1]) -  mcol(d1_array[:, c])).ravel()
+                
+            for c in range(comp):
+                gmm_array0.append((weight0_array[c], mcol(mean_vec0[:, c]), cov_array0[c]))
+            for c in range(comp):
+                gmm_array1.append((weight1_array[c], mcol(mean_vec1[:, c]), cov_array1[c]))
+            
+            gmm0= GMM_EM(K_training_set_0, gmm_array0)
+            gmm1= GMM_EM(K_training_set_1, gmm_array1)
         
-    U0, s0, _ = numpy.linalg.svd(covariance_matrix_0)
-    alpha0= 1
-    d0 = U0[:, 0:1] * s0[0]**0.5 * alpha0
-    
-    U1, s1, _ = numpy.linalg.svd(covariance_matrix_1)
-    alpha1= 1
-    d1 = U1[:, 0:1] * s1[0]**0.5 * alpha1
-    #weight= 1.0/components
-    weight = [0.8, 0.2]
-    
-    mean_vec0= numpy.zeros((mean_0.shape[0], components))
-    
-    cnt=0
-    
-    for c in reversed(range(int(components/2))):
-        mean_vec0[:, cnt]= mean_0[:, 0] + d0[:,0]*(c+1)
-        cnt= cnt + 1
-    for c in range(int(components/2)):
-        mean_vec0[:, cnt]= mean_0[:, 0] - d0[:, 0]*(c+1)
-        cnt= cnt + 1
-    
-    for c in range(components):
-        gmm_array0.append((weight[c], mcol(mean_vec0[:, c]), diag_covariance_matrix_0))
         
-        
-    mean_vec1= numpy.zeros((mean_1.shape[0], components))
-    cnt=0
-    for c in reversed(range(int(components/2))):
-        mean_vec1[:, cnt]= mean_1[:, 0] + d1[:,0]*(c+1)
-        cnt= cnt + 1
-    for c in range(int(components/2)):
-        mean_vec1[:, cnt]= mean_1[:, 0] - d1[:,0]*(c+1)
-        cnt= cnt + 1
-    
-    for c in range(components):
-        gmm_array1.append((weight[c], mcol(mean_vec1[:, c]), diag_covariance_matrix_1))
-    
-    
-    K_training_set_0=  training_data[:, training_labels==0]
-    K_training_set_1=  training_data[:, training_labels==1]
-    
-    gmm0= GMM_EM(K_training_set_0, gmm_array0)
-    gmm1= GMM_EM(K_training_set_1, gmm_array1)
-    print(gmm0[0][0])
-    print(gmm0[1][0])
     weighted_logS0= weighted_logS(test_data, gmm0)
     weighted_logS1= weighted_logS(test_data, gmm1)
     logS= numpy.concatenate((weighted_logS0, weighted_logS1), axis=0)
     logS= logS.T
-    
-    
+        
     Pc_0 = numpy.log(1-prior)
     Pc_1 = numpy.log(prior)
     logSJoint_0 = logS[:, 0] + Pc_0

@@ -77,7 +77,7 @@ def compute_scores(alpha_, D_TR, L_TR, D_TE, gamma, k):
 
 
 if __name__ == '__main__':
-    prior_array= [4/9, 1/5, 4/9] 
+    prior_array= [4/9, 1/5, 4/5] 
     # prior_t = prior_array[0]   # prior for training the model
     prior_tilde = prior_array[0]   # prior for evaluate the model
     
@@ -87,8 +87,8 @@ if __name__ == '__main__':
     test_data = data[2]
     test_labels = data[3]
     
-    # training_data = computePCA(training_data, 9)
-    # test_data = computePCA(test_data, 9)
+    P, training_data = computePCA(training_data, 9)
+    test_data = numpy.dot(P.T, test_data)
     
     # parameters for SVM
     C = 1

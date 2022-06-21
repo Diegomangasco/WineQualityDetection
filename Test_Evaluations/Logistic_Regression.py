@@ -53,16 +53,16 @@ def conf_matrix(scores, labs, pr, C_fn, C_fp):
 
 if __name__=='__main__':
     prior_array = [4/9, 1/5, 4/5]
-    prior_t = 4/9#prior_array[0]   # prior for training the model
-    prior_tilde =4/9 #prior_array[0]   # prior for evaluate the model
+    prior_array[0]   # prior for training the model
+    prior_array[0]   # prior for evaluate the model
     data = load_data()
     training_data = data[0]
     training_labels = data[1]
     test_data = data[2]
     test_labels = data[3]
 
-    # training_data = computePCA(training_data, 9)
-    # test_data = computePCA(test_data, 9)
+    P, training_data = computePCA(training_data, 9)
+    test_data = numpy.dot(P.T, test_data)
     
     lamb = 1e-4;
 

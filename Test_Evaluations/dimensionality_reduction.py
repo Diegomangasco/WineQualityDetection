@@ -39,7 +39,7 @@ def computePCA(data, dimensions):
     # Take all the columns in the reverse order (-1), and then takes only the first columns
     P = U[:, ::-1][:, 0:dimensions]  
     DP = numpy.dot(P.T, data)
-    return DP
+    return P, DP
 
 def computeLDA(data, labels, dimensions):
     covarianceWithinClasses = computeCovarianceForEachClass(data, labels)

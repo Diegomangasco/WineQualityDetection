@@ -63,8 +63,8 @@ if __name__=='__main__':
     test_data = data[2]
     test_labels = data[3]
     
-    # training_data = computePCA(training_data, 9)
-    # test_data = computePCA(test_data, 9)
+    P, training_data = computePCA(training_data, 9)
+    test_data = numpy.dot(P.T, test_data)
 
     # Train the model
     mean_0 = mean(0, training_data, training_labels)
