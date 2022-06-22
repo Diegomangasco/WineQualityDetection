@@ -5,6 +5,7 @@ import scipy
 import scipy.special
 import pylab
 import matplotlib
+from Gaussianization import *
 
 def class_columns(class_identifier, training_data, training_labels):
     return training_data[:, training_labels == class_identifier].shape[1]
@@ -62,6 +63,8 @@ if __name__=='__main__':
     training_labels = data[1]
     test_data = data[2]
     test_labels = data[3]
+    
+    test_data= gaussianization(training_data, test_data)
     
     P, training_data = computePCA(training_data, 9)
     test_data = numpy.dot(P.T, test_data)
