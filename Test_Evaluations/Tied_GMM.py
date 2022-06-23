@@ -284,6 +284,10 @@ if __name__=='__main__':
     llr = numpy.zeros([S.shape[0]])
     for i in range(logS.shape[0]):    
         llr[i] = numpy.log(S[i,1]/S[i,0])
+
+    # to create a file with the scores
+    llr_tied_gmm_for_file= numpy.asarray(llr)
+    numpy.save('llr_tied_gmm.npy', llr_tied_gmm_for_file)
         
     # Compute the calcusus for the ROC diagram
     thresholds = numpy.array(llr)

@@ -64,7 +64,7 @@ if __name__=='__main__':
     test_data = data[2]
     test_labels = data[3]
     
-    test_data= gaussianization(training_data, test_data)
+    #training_data, test_data= gaussianization(training_data, test_data)
 
     P, training_data = computePCA(training_data, 9)
     test_data = numpy.dot(P.T, test_data)
@@ -85,6 +85,7 @@ if __name__=='__main__':
     logS = logpdf_GAU_ND(test_data, mean_0, tied_covariance)
     logS = numpy.concatenate((logS, logpdf_GAU_ND(test_data, mean_1, tied_covariance)), axis=0)
     logS = logS.T
+
 
     # We assume that the prior probability of each class is 1/2
     Pc_0 = numpy.log(1-prior)
@@ -123,6 +124,10 @@ if __name__=='__main__':
     llr = numpy.zeros([S.shape[0]])
     for i in range(logS.shape[0]):    
         llr[i] = numpy.log(S[i,1]/S[i,0])
+
+    # to create a file with the scores
+    llr_tied_mvg_for_file= numpy.asarray(llr)
+    numpy.save('llr_tied_mvg.npy', llr_tied_mvg_for_file)
         
     # Compute the calcusus for the ROC diagram
     thresholds = numpy.array(llr)
