@@ -128,8 +128,8 @@ if __name__=='__main__':
     test_data = data[2]
     test_labels = data[3]
     
-    P, training_data = computePCA(training_data, 9)
-    test_data = numpy.dot(P.T, test_data)
+    #P, training_data = computePCA(training_data, 9)
+    #test_data = numpy.dot(P.T, test_data)
 
     components= 2
     iterations=0
@@ -151,6 +151,8 @@ if __name__=='__main__':
     gmm0=[]
     gmm1=[]
     
+    # We need to create the triplets of (weight, mean, covariance) that will be given to the EM algorithm
+    # The number of triplets depends on the number of component selected
     while iterations < numpy.log2(components):
         iterations= iterations + 1
         weight= 0
@@ -178,6 +180,7 @@ if __name__=='__main__':
             tied_cov_new= tied_covariance
             U, s, _ = numpy.linalg.svd(tied_cov_new)
             psi=0.01
+            # Use a value psi that replaces the values toward zero in s
             s[s<psi] = psi
             tied_cov_new = numpy.dot(U, mcol(s)*U.T)
             

@@ -28,7 +28,7 @@ def conf_matrix(scores, labs, pr, C_fn, C_fp):
 
 if __name__=='__main__':
     prior_array = [4/9, 1/5, 4/5]
-    prior_tilde = prior_array[1]
+    prior_tilde = prior_array[2]
     
     data = load_data()
     real_labels = data[3]
@@ -37,8 +37,15 @@ if __name__=='__main__':
     lr_scores= numpy.load('scores_lr.npy')
     tied_gmm_scores= numpy.load('llr_tied_gmm.npy')
     
-    weight= 1/3
-    fusion_scores= weight*tied_mvg_scores +  weight*tied_gmm_scores + weight*lr_scores 
+    # Fusions of two models 
+    #weight= 1/2
+    #fusion_scores= weight*lr_scores + weight*tied_gmm_scores 
+    #fusion_scores = weight*lr_scores + weight*tied_mvg_scores
+    #fusion_scores = weight*tied_gmm_scores + weight*tied_mvg_scores
+
+    # Fusion with the three models
+    weight = 1/3
+    fusion_scores = weight*lr_scores + weight*tied_mvg_scores + weight*tied_gmm_scores
    
 
     # Compute the calcusus for the ROC diagram

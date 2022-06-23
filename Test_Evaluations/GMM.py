@@ -129,6 +129,8 @@ if __name__=='__main__':
     gmm0=[]
     gmm1=[]
     
+    # We need to create the triplets of (weight, mean, covariance) that will be given to the EM algorithm
+    # The number of triplets depends on the number of component selected
     while iterations < numpy.log2(components):
         iterations= iterations + 1
         weight= 0
@@ -155,6 +157,7 @@ if __name__=='__main__':
             cov_matr0_New= covariance_matrix_0
             U, s, _ = numpy.linalg.svd(cov_matr0_New)
             psi=0.01
+            # Use a value psi that replaces the values toward zero in s
             s[s<psi] = psi
             cov_matr0_New = numpy.dot(U, mcol(s)*U.T)
             

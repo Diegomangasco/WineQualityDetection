@@ -46,6 +46,7 @@ def SVM_linear(DTR, LTR, C, k):
         Ha = numpy.dot(H, mcol(alpha))
         aHa = numpy.dot(mrow(alpha), Ha)
         a1 = alpha.sum()
+        # Return loss function and gradient 
         return -0.5 * aHa.ravel() + a1, -Ha.ravel() + numpy.ones(alpha.size) # grad= - H alpha + 1
 
     def LDual(alpha):   # function that we actually minimize -> -loss and -grad

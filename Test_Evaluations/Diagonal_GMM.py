@@ -45,6 +45,7 @@ def logpdf_GAU_ND(X, mean, covariance_matrix):
 #     return scipy.special.logsumexp(S, axis=0)
 
 def GMM_EM(X, gmm):
+    # EM algorithm for computing the recalibrated gaussian component parameters (weight, mean, covariance)
     llNew = None
     llOld = None
     G = len(gmm)
@@ -134,6 +135,8 @@ if __name__=='__main__':
     gmm0=[]
     gmm1=[]
     
+    # We need to create the triplets of (weight, mean, covariance) that will be given to the EM algorithm
+    # The number of triplets depends on the number of component selected
     while iterations < numpy.log2(components):
         iterations= iterations + 1
         weight= 0
@@ -159,12 +162,13 @@ if __name__=='__main__':
             
             diag_cov_0_New= diag_covariance_matrix_0 
             U, s, _ = numpy.linalg.svd(diag_cov_0_New)
+            # Use a value psi that replaces the values toward zero in s
             psi=0.01
             s[s<psi] = psi
             diag_cov_0_New = numpy.dot(U, mcol(s)*U.T)
             
             diag_cov_1_New= diag_covariance_matrix_1
-            U, s, _ = numpy.linalg.svd(diag_cov_1_New)
+            U, s, _ = numpy.linalg.svd(diag_cov_1_New) 
             psi=0.01
             s[s<psi] = psi
             diag_cov_1_New = numpy.dot(U, mcol(s)*U.T)
@@ -233,8 +237,10 @@ if __name__=='__main__':
     weighted_logS0= weighted_logS(test_data, gmm0)
     weighted_logS1= weighted_logS(test_data, gmm1)
     logS= numpy.concatenate((weighted_logS0, weighted_logS1), axis=0)
-    logS= logS.T
+    logS= logS.T 
+    # logS represents the log class conditional probability
         
+    # Compute the passages for the array of class posterior probabilities
     Pc_0 = numpy.log(1-prior)
     Pc_1 = numpy.log(prior)
     logSJoint_0 = logS[:, 0] + Pc_0
