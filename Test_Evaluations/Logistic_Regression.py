@@ -1,9 +1,7 @@
 import numpy
 import scipy
-import sklearn
 import numpy.linalg
 import scipy.optimize
-import sklearn.datasets
 import pylab
 import matplotlib
 from load_data import *
