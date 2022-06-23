@@ -128,8 +128,8 @@ if __name__=='__main__':
     test_data = data[2]
     test_labels = data[3]
     
-    P, training_data = computePCA(training_data, 9)
-    test_data = numpy.dot(P.T, test_data)
+    #P, training_data = computePCA(training_data, 9)
+    #test_data = numpy.dot(P.T, test_data)
 
     components= 2
     iterations=0

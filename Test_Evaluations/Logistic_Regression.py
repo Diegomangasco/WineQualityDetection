@@ -1,9 +1,7 @@
 import numpy
 import scipy
-import sklearn
 import numpy.linalg
 import scipy.optimize
-import sklearn.datasets
 import pylab
 import matplotlib
 from load_data import *
@@ -61,8 +59,8 @@ if __name__=='__main__':
     test_data = data[2]
     test_labels = data[3]
 
-    P, training_data = computePCA(training_data, 9)
-    test_data = numpy.dot(P.T, test_data)
+    #P, training_data = computePCA(training_data, 9)
+    #test_data = numpy.dot(P.T, test_data)
     
     lamb = 1e-4;
 
