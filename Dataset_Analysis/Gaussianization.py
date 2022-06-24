@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jun 17 15:03:11 2022
-
-@author: genna
-"""
-
 import numpy
 import scipy.stats
 from load_data import *
@@ -13,13 +6,15 @@ from Dataset_Analysis import *
 
 def gaussianization(D):
     r= numpy.zeros((D.shape[0], D.shape[1]))
+    # r is the rank matrix
     gauss_D= numpy.zeros((D.shape[0], D.shape[1]))
     
     for index in range(D.shape[0]):
         i=0;
-        for feature in D[index,:]:
-            r[index, i]= (((D[index, :] < feature).sum()) + 1)/(D.shape[1] + 2)
+        for element in D[index,:]:
+            r[index, i]= (((D[index, :] < element).sum()) + 1)/(D.shape[1] + 2)
             gauss_D[index, i]= scipy.stats.norm.ppf(r[index, i])
+            # The scipy.stats.norm.ppf returns the inverse of the cumulative distribution function of the standard normal distribution
             i= i + 1
     
     return gauss_D

@@ -52,11 +52,6 @@ def SVM_linear(DTR, LTR, C, k):
         loss, grad = JDual(alpha)
         return -loss, -grad
     
-    # only to verify if the dual is computed well (computing the duality gap)
-    # def JPrimal(w):
-    #     S = numpy.dot(mrow(w), D_hat)
-    #     loss = numpy.maximum(numpy.zeros(S.shape), 1-Z*S).sum()
-    #     return 0.5 * numpy.linalg.norm(w)**2 + C * loss
 
     alphaStar, _x, _y = scipy.optimize.fmin_l_bfgs_b(
         LDual,
@@ -73,7 +68,6 @@ def SVM_linear(DTR, LTR, C, k):
 
 if __name__ == '__main__':
     prior_array= [4/9, 1/5, 4/5] 
-    # prior_t = prior_array[0]   # prior for training the model
     prior_tilde = prior_array[0]   # prior for evaluate the model
     data = load_data()
     training_data = data[0]

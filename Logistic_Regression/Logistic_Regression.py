@@ -1,9 +1,7 @@
 import numpy
 import scipy
-import sklearn
 import numpy.linalg
 import scipy.optimize
-import sklearn.datasets
 import pylab
 import matplotlib
 from load_data import *
@@ -22,8 +20,6 @@ def logreg_obj_wrap(DTR, LTR, l, prior_tr):
         w = vcol(v[0:M])
         b = v[-1]       
         S = numpy.dot(w.T, DTR) + b
-        # For the non  weighted version of the model
-        # cxe= numpy.logaddexp(0, -S*Z) # cross-entropy
         
         # For the prior weighted version of the model
         cxe_one = numpy.logaddexp(0, -S[:, Z>0]*Z[Z>0])

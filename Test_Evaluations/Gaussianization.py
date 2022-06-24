@@ -8,8 +8,8 @@ def gaussianization(D_train, D_test):
     
     for index in range(D_test.shape[0]):
         i=0;
-        for feature in D_test[index,:]:
-            r[index, i]= (((D_train[index, :] < feature).sum()) + 1)/(D_train.shape[1] + 2)
+        for element in D_test[index,:]:
+            r[index, i]= (((D_train[index, :] < element).sum()) + 1)/(D_train.shape[1] + 2)
             gauss_D_test[index, i]= scipy.stats.norm.ppf(r[index, i])
             i= i + 1
 
@@ -18,8 +18,8 @@ def gaussianization(D_train, D_test):
     
     for index in range(D_train.shape[0]):
         i=0;
-        for feature in D_train[index,:]:
-            r[index, i]= (((D_train[index, :] < feature).sum()) + 1)/(D_train.shape[1] + 2)
+        for element in D_train[index,:]:
+            r[index, i]= (((D_train[index, :] < element).sum()) + 1)/(D_train.shape[1] + 2)
             gauss_D_train[index, i]= scipy.stats.norm.ppf(r[index, i])
             i= i + 1
     

@@ -32,12 +32,18 @@ if __name__=='__main__':
     
     real_labels= numpy.load('real_labels.npy')
     
+    # Before running this script is necessary to run the scripts of the models involved in the fusion with specific values of hyperparameters, prior and PCA 
     tied_mvg_scores= numpy.load('llr_tied_mvg.npy')
     #lr_scores= numpy.load('scores_lr.npy')
     tied_gmm_scores= numpy.load('llr_tied_gmm.npy')
     
     weight= 1/2
-    fusion_scores= weight*tied_mvg_scores +  +weight*tied_gmm_scores #weight*lr_scores #
+    fusion_scores= weight*tied_mvg_scores + weight*tied_gmm_scores 
+    # fusion_scores = weight*tied_mvg_scores + weight*lr_scores
+    # fusion_scores = weight*tied_gmm_scores + weight*lr_scores
+
+    # weight = 1/3
+    # fusion_scores = weight*tied_gmm_scores + weight*lr_scores + weight*tied_mvg_scores
    
 
     # Compute the calcusus for the ROC diagram

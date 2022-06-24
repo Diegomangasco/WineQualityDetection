@@ -1,5 +1,4 @@
 import numpy
-import numpy
 
 def mcol(array):
     return numpy.reshape(array, (array.shape[0], 1))    # Reshape as column array

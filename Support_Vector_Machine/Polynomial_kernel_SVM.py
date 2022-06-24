@@ -74,12 +74,9 @@ def compute_scores(alpha_, D_TR, L_TR, d, D_TE, c, k):
     
     return s_array
     
-    
-
 
 if __name__ == '__main__':
     prior_array= [4/9, 1/5, 4/5] 
-    prior_t = prior_array[0]   # prior for training the model
     prior_tilde = prior_array[0]   # prior for evaluate the model
     data = load_data()
     training_data = data[0]

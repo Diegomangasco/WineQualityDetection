@@ -33,6 +33,7 @@ if __name__=='__main__':
     data = load_data()
     real_labels = data[3]
     
+    # Before running this script is necessary to run the scripts of the models involved in the fusion with specific values of hyperparameters, prior and PCA 
     tied_mvg_scores= numpy.load('llr_tied_mvg.npy')
     lr_scores= numpy.load('scores_lr.npy')
     tied_gmm_scores= numpy.load('llr_tied_gmm.npy')

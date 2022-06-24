@@ -67,7 +67,7 @@ if __name__=='__main__':
     test_data = data[2]
     test_labels = data[3]
    
-    training_data, test_data= gaussianization(training_data, test_data)
+    #training_data, test_data= gaussianization(training_data, test_data)
    
     
     P, training_data = computePCA(training_data, 9)

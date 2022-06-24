@@ -78,7 +78,6 @@ def compute_scores(alpha_, D_TR, L_TR, D_TE, gamma, k):
 
 if __name__ == '__main__':
     prior_array= [4/9, 1/5, 4/5] 
-    # prior_t = prior_array[0]   # prior for training the model
     prior_tilde = prior_array[0]   # prior for evaluate the model
     
     data = load_data()
@@ -101,7 +100,7 @@ if __name__ == '__main__':
     length_of_interval = int(training_data.shape[1]/K)
     index = 0
     counter = 0
-    # For cycle for doing K fold cross validation 
+    # Cycle for doing K fold cross validation 
     while index <= (training_data.shape[1] - length_of_interval):
         # Take one section as validation set
         start = index

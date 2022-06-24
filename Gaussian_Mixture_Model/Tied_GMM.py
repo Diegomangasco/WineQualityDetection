@@ -37,14 +37,6 @@ def logpdf_GAU_ND(X, mean, covariance_matrix):
      
     return mrow(numpy.array(l_x))
 
-# def GMM_ll_perSample(X, gmm):
-#     G = len(gmm)
-#     N = X.shape[1]
-#     S = numpy.zeros((G, N))
-#     for g in range(G):
-#         S[g, :] = logpdf_GAU_ND(X, gmm[g][1], gmm[g][2]) + numpy.log(gmm[g][0])
-#     return scipy.special.logsumexp(S, axis=0)
-
 def GMM_EM(X, gmm):
     llNew = None
     llOld = None
